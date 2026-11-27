@@ -32,7 +32,7 @@ Speicher-Anzeige, Tools (Notizen/Rechner), Fokus-Modus (F9), Mausgesten, Screens
 
 ## Tor-Route, Bridges, Tab-Vorschau
 - **Route**: 🧅-Anzeige in der Leiste (Land je Hop, Tooltip mit IPs) für den aktiven Tab.
-- **obfs4/meek/Snowflake**: CI lädt lyrebird.exe + snowflake-client.exe aus dem Tor Expert Bundle nach `pt\` (Installer legt sie neben die exe). Bridge-Zeilen von bridges.torproject.org in den Einstellungen einfügen, dann VPN aus/an.
+- **obfs4/meek/Snowflake**: CI lädt lyrebird.exe und, falls im Tor Expert Bundle enthalten, snowflake-client.exe nach `pt\` (Installer legt sie neben die exe). Bridge-Zeilen von bridges.torproject.org in den Einstellungen einfügen, dann VPN aus/an.
 - **Tab-Vorschau**: Hover über einen Tab zeigt Miniaturbild (WebView2 CapturePreview, Cargo-Feature `previews`; fällt im CI automatisch weg, falls der Windows-Build damit scheitert).
 
 ## Installer & Updater (0.5)

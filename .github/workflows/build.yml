@@ -53,8 +53,15 @@ jobs:
           mkdir teb | Out-Null
           tar -xzf teb.tar.gz -C teb
           mkdir pt | Out-Null
-          Copy-Item teb/tor/pluggable_transports/lyrebird.exe pt/
-          Copy-Item teb/tor/pluggable_transports/snowflake-client.exe pt/
+          $lyrebird = Get-Item teb/tor/pluggable_transports/lyrebird.exe -ErrorAction SilentlyContinue
+          if (-not $lyrebird) { throw "lyrebird.exe fehlt im Tor Expert Bundle" }
+          Copy-Item $lyrebird.FullName pt/
+          $snowflake = Get-ChildItem teb -Filter snowflake-client.exe -File -Recurse | Select-Object -First 1
+          if ($snowflake) {
+            Copy-Item $snowflake.FullName pt/
+          } else {
+            Write-Host "::warning::snowflake-client.exe fehlt im Tor Expert Bundle - Snowflake wird nicht mitgeliefert"
+          }
 
       # Kleiner Online-Installer (wie bei Chrome/Brave) + Hintergrund-Updater: eine Datei, LiquidFlowSetup.exe
       - name: Setup-Programm bauen
