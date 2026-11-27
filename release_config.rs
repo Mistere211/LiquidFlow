@@ -1,12 +1,12 @@
 use std::cmp::Ordering;
-use sha2::{Digest, Sha256};
 
 pub const DEFAULT_REPOSITORY: &str = "Mistere211/LiquidFlow";
 pub const REPOSITORY_URL: &str = "https://github.com/Mistere211/LiquidFlow";
-pub const LATEST_RELEASE_API: &str =
-    "https://api.github.com/repos/Mistere211/LiquidFlow/releases/latest";
 
+// This shared module is compiled into both binaries; only the setup binary fetches this asset.
+#[allow(dead_code)]
 pub const APP_ASSET: &str = "liquidflow-app-windows-x86_64.zip";
+#[allow(dead_code)]
 pub const OFFLINE_SETUP_ASSET: &str = "LiquidFlow-Offline-Setup.exe";
 pub const SHA256_SUFFIX: &str = ".sha256";
 
@@ -36,13 +36,16 @@ pub fn latest_release_api(repository: &str) -> Result<String, String> {
         return Err("Das Repository muss im Format owner/name angegeben werden.".into());
     }
 
-    if repository.eq_ignore_ascii_case(DEFAULT_REPOSITORY) {
-        Ok(LATEST_RELEASE_API.to_string())
+    let api_repository = if repository.eq_ignore_ascii_case(DEFAULT_REPOSITORY) {
+        REPOSITORY_URL
+            .strip_prefix("https://github.com/")
+            .ok_or("Die GitHub-Repository-URL ist ungültig.")?
     } else {
-        Ok(format!(
-            "https://api.github.com/repos/{owner}/{name}/releases/latest"
-        ))
-    }
+        repository
+    };
+    Ok(format!(
+        "https://api.github.com/repos/{api_repository}/releases/latest"
+    ))
 }
 
 pub fn github_status_error(status: u16) -> String {
@@ -195,7 +198,9 @@ pub fn sha256_matches(actual: &str, expected: &str) -> bool {
         && actual.eq_ignore_ascii_case(expected)
 }
 
+#[cfg(test)]
 pub fn sha256(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
     format!("{:x}", Sha256::digest(bytes))
 }
 
@@ -206,7 +211,10 @@ mod tests {
     #[test]
     fn uses_canonical_repository_api_and_validates_overrides() {
         assert_eq!(REPOSITORY_URL, "https://github.com/Mistere211/LiquidFlow");
-        assert_eq!(latest_release_api(DEFAULT_REPOSITORY).unwrap(), LATEST_RELEASE_API);
+        assert_eq!(
+            latest_release_api(DEFAULT_REPOSITORY).unwrap(),
+            "https://api.github.com/repos/Mistere211/LiquidFlow/releases/latest"
+        );
         assert_eq!(
             latest_release_api("example/project").unwrap(),
             "https://api.github.com/repos/example/project/releases/latest"
