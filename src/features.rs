@@ -281,11 +281,11 @@ if(un)set(un,u);set(pw,p);}})({},{})"#, serde_json::to_string(u).unwrap(), serde
         let r = std::env::current_exe().ok()?.parent()?.parent()?.parent()?.to_path_buf();
         r.join("LiquidFlowSetup.exe").exists().then_some(r)
     }
-    fn ver_nums(v: &str) -> Vec<u32> { v.trim_start_matches('v').split('.').map(|x| x.parse().unwrap_or(0)).collect() }
     /// Hat der Hintergrund-Updater schon eine neuere Version installiert, als gerade läuft?
     pub(crate) fn installed_newer(&self) -> Option<String> {
         let cur = std::fs::read_to_string(Self::install_root()?.join("current.txt")).ok()?.trim().to_string();
-        (Self::ver_nums(&cur) > Self::ver_nums(env!("CARGO_PKG_VERSION"))).then_some(cur)
+        (crate::release_config::compare_versions(&cur, env!("CARGO_PKG_VERSION"))
+            == Some(std::cmp::Ordering::Greater)).then_some(cur)
     }
     pub(crate) fn update_label(&self) -> Option<String> {
         if self.installed_newer().is_some() { Some("restart".into()) } else { self.release.as_ref().map(|r| r.tag.clone()) }
@@ -307,15 +307,45 @@ if(un)set(un,u);set(pw,p);}})({},{})"#, serde_json::to_string(u).unwrap(), serde
         if let Some(root) = Self::install_root() {
             let p = self.px.clone();
             std::thread::spawn(move || {
-                let ok = std::process::Command::new(root.join("LiquidFlowSetup.exe")).arg("--update").status().map(|s| s.success()).unwrap_or(false);
-                let _ = p.send_event(Ev::Updated(ok));
+                let result = std::process::Command::new(root.join("LiquidFlowSetup.exe"))
+                    .arg("--update")
+                    .output()
+                    .map_err(|error| format!("Updater konnte nicht gestartet werden ({error})."))
+                    .and_then(|output| {
+                        if output.status.success() {
+                            Ok(())
+                        } else {
+                            let message = match std::fs::read_to_string(root.join("update.log")) {
+                                Ok(message) if !message.trim().is_empty() => message,
+                                Ok(_) => String::from_utf8_lossy(&output.stderr).trim().to_string(),
+                                Err(error) => {
+                                    let stderr = String::from_utf8_lossy(&output.stderr);
+                                    if stderr.trim().is_empty() {
+                                        format!("Update fehlgeschlagen; update.log konnte nicht gelesen werden ({error}).")
+                                    } else {
+                                        stderr.trim().to_string()
+                                    }
+                                }
+                            };
+                            if message.is_empty() {
+                                Err("Update fehlgeschlagen. Details stehen in update.log.".into())
+                            } else {
+                                Err(message)
+                            }
+                        }
+                    });
+                let _ = p.send_event(Ev::Updated(result));
             });
             return;
         }
-        let repo = self.settings.update_repo.trim().to_string();
-        if repo.is_empty() { return; }
+        let configured_repo = self.settings.update_repo.trim();
+        let repo = if configured_repo.is_empty() {
+            crate::release_config::DEFAULT_REPOSITORY.to_string()
+        } else {
+            configured_repo.to_string()
+        };
         let p = self.px.clone();
-        std::thread::spawn(move || { if let Some(r) = update::check(&repo) { let _ = p.send_event(Ev::UpdateAvail(r)); } });
+        std::thread::spawn(move || { let _ = p.send_event(Ev::UpdateAvail(update::check(&repo))); });
     }
     pub(crate) fn update_install(&mut self) {
         if self.installed_newer().is_some() { self.restart(); return; }
@@ -323,7 +353,13 @@ if(un)set(un,u);set(pw,p);}})({},{})"#, serde_json::to_string(u).unwrap(), serde
         let Some(r) = self.release.clone() else { self.notice = "Kein Update verfügbar".into(); return };
         self.notice = "Lade Update…".into();
         let p = self.px.clone();
-        std::thread::spawn(move || { let _ = p.send_event(Ev::UpdateReady(update::download(&r))); });
+        std::thread::spawn(move || {
+            let progress_proxy = p.clone();
+            let result = update::download(&r, &mut |percent| {
+                let _ = progress_proxy.send_event(Ev::UpdateProgress(percent));
+            });
+            let _ = p.send_event(Ev::UpdateReady(result));
+        });
     }
     pub(crate) fn update_ready(&mut self, r: Result<std::path::PathBuf, String>) {
         match r {

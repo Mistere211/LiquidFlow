@@ -1,4 +1,6 @@
 #![cfg_attr(all(not(debug_assertions), windows), windows_subsystem = "windows")]
+#[path = "../../release_config.rs"]
+mod release_config;
 mod core;
 
 use core::*;
@@ -42,7 +44,9 @@ fn main() {
 
     if a.update {
         let cfg = load_config(&root);
-        let repo = a.repo.clone().filter(|r| !r.is_empty()).or(Some(cfg.repo).filter(|r| !r.is_empty())).unwrap_or_else(|| REPO.to_string());
+        let repo = a.repo.clone().filter(|r| !r.trim().is_empty())
+            .or_else(|| (!cfg.repo.trim().is_empty()).then_some(cfg.repo))
+            .unwrap_or_else(|| REPO.to_string());
         match update(&root, &repo, a.api.as_deref()) {
             Ok(Some(v)) => { println!("updated {v}"); if a.launch { launch(&root); } }
             Ok(None) => { println!("up-to-date"); if a.launch { launch(&root); } }
@@ -52,7 +56,8 @@ fn main() {
     }
 
     let opts = Opts { root: root.clone(), desktop: !a.no_desktop, updates: !a.no_updates, defaults: a.defaults,
-        repo: a.repo.clone().unwrap_or_default(), payload: a.payload.clone(), version: a.version.clone(), api: a.api.clone() };
+        repo: a.repo.clone().filter(|r| !r.trim().is_empty()).unwrap_or_else(|| REPO.to_string()),
+        payload: a.payload.clone(), version: a.version.clone(), api: a.api.clone() };
 
     if a.silent {
         let r = if a.uninstall { uninstall(&root, false, &mut |_, _| {}).map(|_| "removed".to_string()) } else { install(&opts, &mut |_, _| {}) };
@@ -66,7 +71,11 @@ fn main() {
     let window = WindowBuilder::new().with_title("Liquid Flow – Setup").with_inner_size(LogicalSize::new(560.0, 460.0)).with_resizable(false).build(&el).unwrap();
     let init = format!("window.MODE={};window.DEF_DIR={};", serde_json::to_string(mode).unwrap(), serde_json::to_string(&root.to_string_lossy()).unwrap());
     let p = px.clone();
-    let (a_payload, a_version, a_repo, a_api) = (a.payload.clone(), a.version.clone(), a.repo.clone().unwrap_or_default(), a.api.clone());
+    let (a_payload, a_version, a_repo, a_api) = (
+        a.payload.clone(), a.version.clone(),
+        a.repo.clone().filter(|r| !r.trim().is_empty()).unwrap_or_else(|| REPO.to_string()),
+        a.api.clone(),
+    );
     let wv = WebViewBuilder::new().with_html(include_str!("ui.html")).with_initialization_script(&init)
         .with_ipc_handler(move |r| {
             let Ok(v) = serde_json::from_str::<serde_json::Value>(r.body()) else { return };

@@ -125,7 +125,7 @@ impl Default for Settings {
             block_third_party_cookies: false,
             sync_folder: String::new(),
             sync_ts: 0,
-            update_repo: String::new(),
+            update_repo: crate::release_config::DEFAULT_REPOSITORY.into(),
             restore_session: true,
             block_autoplay: true,
             block_popups: true,

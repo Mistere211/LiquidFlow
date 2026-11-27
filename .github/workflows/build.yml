@@ -25,6 +25,7 @@ jobs:
         run: |
           $ver = "${{ github.ref_name }}".TrimStart('v')
           (Get-Content Cargo.toml -Raw) -replace '(?m)^version = ".*"', "version = `"$ver`"" | Set-Content Cargo.toml -NoNewline
+          (Get-Content installer\liquidflow.iss -Raw) -replace '(?m)^AppVersion=.*$', "AppVersion=$ver" | Set-Content installer\liquidflow.iss -NoNewline
 
       # Zuerst mit Tab-Vorschau (Feature "previews"). Klappt das nicht, wird ohne gebaut.
       - name: Browser bauen
@@ -65,8 +66,6 @@ jobs:
 
       # Kleiner Online-Installer (wie bei Chrome/Brave) + Hintergrund-Updater: eine Datei, LiquidFlowSetup.exe
       - name: Setup-Programm bauen
-        env:
-          LIQUIDFLOW_REPO: ${{ github.repository }}
         run: cargo build --release --manifest-path setup/Cargo.toml
 
       - name: Programmpaket und Dateien sammeln
@@ -76,7 +75,13 @@ jobs:
           mkdir payload | Out-Null
           Copy-Item target/release/liquidflow.exe payload/
           if (Test-Path pt) { Copy-Item pt payload/pt -Recurse }
-          7z a -tzip dist/liquidflow-app-windows-x86_64.zip ./payload/*
+          Push-Location payload
+          try {
+            7z a -tzip ..\dist\liquidflow-app-windows-x86_64.zip *
+            if ($LASTEXITCODE -ne 0) { throw "Programmpaket konnte nicht erstellt werden" }
+          } finally {
+            Pop-Location
+          }
           (Get-FileHash dist/liquidflow-app-windows-x86_64.zip -Algorithm SHA256).Hash.ToLower() | Out-File -Encoding ascii -NoNewline dist/liquidflow-app-windows-x86_64.zip.sha256
           Copy-Item setup/target/release/liquidflow-setup.exe dist/LiquidFlowSetup.exe
 

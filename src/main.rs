@@ -25,6 +25,8 @@ mod vault;
 mod net;
 mod settings;
 mod shield;
+#[path = "../release_config.rs"]
+mod release_config;
 
 use settings::{resolve_input, Settings};
 use shield::{host_of, Rules, START};
@@ -44,11 +46,12 @@ enum Ev {
     BlPath(std::path::PathBuf), BlRefreshed(String, Result<usize, String>), BlLoaded(usize),
     ExtIpc(String, String, String), ExtInstalled(Result<String, String>), ExtPick(std::path::PathBuf), SyncFolder(std::path::PathBuf),
     Thumb(u32, Vec<u8>),
-    Updated(bool),
+    Updated(Result<(), String>),
     HttpsProbe(u32, String), ProbeDone(u32, String, bool), AllowHttp(u32, String), Pwned(Vec<(String, Option<u64>)>), Vt(String, String),
     ImportData(Vec<data::Bookmark>, Vec<data::HistEntry>, String), TtsText(String), Notice(String),
     OpenUrl(String), NewWindow(u32, String), Leak(serde_json::Value), BgPick(std::path::PathBuf),
-    UpdateAvail(update::Release), UpdateReady(Result<std::path::PathBuf, String>), PwCaptured(String, String),
+    UpdateAvail(Result<Option<update::Release>, String>), UpdateProgress(f32),
+    UpdateReady(Result<std::path::PathBuf, String>), PwCaptured(String, String),
 }
 
 fn token() -> String {
@@ -638,9 +641,13 @@ impl App {
             },
             Ev::ExtPick(p) => { let tx = self.px.clone(); std::thread::spawn(move || { let _ = tx.send_event(Ev::ExtInstalled(ext::install_path(&p))); }); }
             Ev::SyncFolder(p) => { self.settings.sync_folder = p.to_string_lossy().into_owned(); self.settings.save(); self.sync_now(); }
-            Ev::UpdateAvail(r) => { self.notice = format!("Update {} verfügbar", r.tag); self.release = Some(r); }
+            Ev::UpdateAvail(Ok(Some(r))) => { self.notice = format!("Update {} verfügbar", r.tag); self.release = Some(r); }
+            Ev::UpdateAvail(Ok(None)) => { self.release = None; }
+            Ev::UpdateAvail(Err(e)) => self.notice = e,
+            Ev::UpdateProgress(p) => self.notice = format!("Lade Update… {:.0}%", p * 100.0),
             Ev::UpdateReady(r) => self.update_ready(r),
-            Ev::Updated(ok) => self.notice = if self.installed_newer().is_some() { "Update installiert – klicke auf „Neu starten“".into() } else if ok { "Liquid Flow ist aktuell".into() } else { "Update-Suche fehlgeschlagen".into() },
+            Ev::Updated(Ok(())) => self.notice = if self.installed_newer().is_some() { "Update installiert – klicke auf „Neu starten“".into() } else { "Liquid Flow ist aktuell".into() },
+            Ev::Updated(Err(e)) => self.notice = e,
             Ev::PwCaptured(h, r) => self.pw_captured(h, r),
             Ev::OpenUrl(u) => { if u.starts_with("http") { self.new_tab(Some(u), false); } self.window.set_minimized(false); self.window.set_focus(); }
             Ev::NewWindow(id, u) => self.new_window(id, u),
@@ -737,7 +744,7 @@ fn main() {
     if app.settings.vpn_enabled { app.net.set_vpn(true, app.settings.kill_switch, &app.settings.vpn_exit_country); }
     app.net.load_stats(data::load("stats.json"));
     app.start_all_bg();
-    if app.settings.update_repo.len() > 2 || app.installed_newer().is_some() { app.check_update(); }
+    app.check_update();
     app.bl_rebuild(); // gecachte Listen im Hintergrund laden, blockiert den Start nicht
     if app.settings.bl_update == "startup" { app.bl_refresh_all(); }
     let cli = std::env::args().skip(1).find(|a| a.starts_with("http"));

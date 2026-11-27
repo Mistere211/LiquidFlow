@@ -22,7 +22,7 @@ Seiten können Tasten nur mit geheimem Token melden (kein Fernsteuern durch Webs
 - **Erweiterungen**: Web-Store-ID/Link, .crx/.zip oder Ordner installieren (Einstellungen). Adapter in `ext.rs` (Content-Scripts, Background, Messaging, storage, tabs, Popup).
 - **Passwort-Tresor** (`vault.rs`): Argon2id + ChaCha20-Poly1305, Autofill nur per Tastendruck, nur HTTPS, nur passende Seite.
 - **Sync** (`sync.rs`): Ordner-basiert (OneDrive/Dropbox/Syncthing), verschlüsselt mit dem Master-Passwort.
-- **Auto-Update** (`update.rs`): GitHub Releases, Tag `v0.x.y` pushen -> Release mit SHA-256; im Browser Repo `owner/name` eintragen.
+- **Auto-Update** (`update.rs`): GitHub Releases. Das Standard-Repository und die Asset-Namen stehen zentral in `release_config.rs`; leere oder fehlende Einstellungen verwenden `Mistere211/LiquidFlow`.
 - **Split-View, Tab-Gruppen, Kamera/Mikro/Standort pro Seite sperren, Drittanbieter-Cookies (experimentell)**.
 
 ## Neu in 0.4
@@ -38,9 +38,21 @@ Speicher-Anzeige, Tools (Notizen/Rechner), Fokus-Modus (F9), Mausgesten, Screens
 ## Installer & Updater (0.5)
 - **`LiquidFlowSetup.exe`** (~3 MB) ist der Installer wie bei Chrome/Brave: lädt die aktuelle Version aus dem GitHub-Release, prüft SHA-256, installiert pro Benutzer nach `%LOCALAPPDATA%\LiquidFlow` (ohne Admin), legt Verknüpfungen an, registriert den Browser (Standard-Apps, Deinstallation in den Windows-Einstellungen).
 - **Updater**: dieselbe Datei liegt installiert unter `…\LiquidFlow\LiquidFlowSetup.exe` und läuft stündlich + bei jeder Anmeldung still im Hintergrund (`--update --silent`). Neue Versionen landen in `versions\<ver>\`, der Browser zeigt „↻ Neu starten“.
-- **Veröffentlichen**: `git tag v0.5.0 && git push origin v0.5.0` → GitHub baut und erstellt das Release mit allen Dateien.
+- **Release-Dateien**: `liquidflow-app-windows-x86_64.zip` + `.sha256` für den Online-Setup und `LiquidFlow-Offline-Setup.exe` + `.sha256` für den Browser-Updater. Die Actions-Workflow-Dateinamen müssen mit `release_config.rs` übereinstimmen.
+- **Veröffentlichen**: Versions-Tag `vX.Y.Z` pushen → GitHub Actions baut und hängt die Release-Dateien an das GitHub-Release. Das Tag muss auf einen Commit mit dem aktuellen Workflow zeigen.
 - Kommandozeile: `--silent`, `--dir <Ordner>`, `--uninstall`, `--update`, `--no-desktop`, `--no-updates`.
 - **Offline-Installer**: `LiquidFlow-Offline-Setup.exe` (Inno Setup) bleibt als Ausweichlösung.
+
+### Zugriffsschutz bei privaten GitHub-Repositories
+
+Der Client verwendet die anonyme GitHub-Releases-API. Private Repositorys und fehlende Repositorys liefern dabei absichtlich oft dieselbe HTTP-404-Antwort. Die voreingestellte Repository-Adresse behebt eine fehlende lokale Konfiguration, gewährt aber keinen Zugriff auf private Releases. Deshalb kann der aktuelle private Release ohne zusätzliche Infrastruktur nicht vom Setup oder Browser geladen werden. Die Fehlermeldung nennt diesen Fall jetzt ausdrücklich. Es werden weder persönliche Tokens eingebettet noch GitHub-Zugriffskontrollen umgangen.
+
+Mögliche Betriebsmodelle:
+
+1. **Öffentliches Release-Repository** (empfohlen, falls die Release-Dateien öffentlich sein dürfen): Der Quellcode kann privat bleiben; ausschließlich freigegebene Release-Artefakte kommen in ein separates öffentliches Repository. Die Client-Konfiguration wird dann auf dieses Repository gesetzt. Für Herausgeber-Authentizität zusätzlich die Artefakte signieren und die Signatur im Client verifizieren.
+2. **Update-Backend für private Releases**: Ein HTTPS-Dienst authentifiziert sich serverseitig bei GitHub, idealerweise mit einer GitHub App und minimalen Leserechten. Der private Schlüssel liegt ausschließlich in einem Secret-Manager. Der Dienst gibt nur freigegebene Versionen und fest erlaubte Asset-Namen zurück und streamt die Dateien; keine GitHub-Zugangsdaten gelangen in die EXE. Für stärkere Integrität sollte zusätzlich ein signiertes Manifest (dessen öffentlicher Prüfschlüssel im Client liegt) oder eine verifizierte Codesignatur verwendet werden. Die vorhandene SHA-256-Datei erkennt Übertragungsfehler, ist aber keine unabhängige Herausgeber-Signatur.
+
+Für öffentliche Releases benötigt die Build-Action kein langlebiges GitHub-Secret: `GITHUB_TOKEN` wird von Actions bereitgestellt und die Workflow-Berechtigung `contents: write` ist gesetzt. Für private Client-Downloads wäre ein Backend samt serverseitiger GitHub-App-Konfiguration nötig; ein Client-Secret ist ausdrücklich keine sichere Alternative.
 
 ## Neu in 0.6
 - **Gaming-Modus** (Strg+Shift+M): Hintergrund-Tabs schlafen, Erweiterungen und Hintergrundjobs pausiert.
