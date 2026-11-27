@@ -37,7 +37,7 @@ use tao::dpi::{LogicalPosition, LogicalSize};
 use tao::event::{Event, WindowEvent};
 use tao::event_loop::{ControlFlow, EventLoopBuilder, EventLoopProxy};
 use tao::window::{Fullscreen, Window, WindowBuilder};
-use wry::{ProxyConfig, ProxyEndpoint, Rect, WebView, WebViewBuilder};
+use wry::{ProxyConfig, ProxyEndpoint, Rect, WebView};
 
 enum Ev {
     Ipc(String), PageIpc(u32, String), DlStart(String, String), DlDone(String, bool), Title(u32, String), Url(u32, String), Navigate(u32, String), Tick, Vpn(String),
