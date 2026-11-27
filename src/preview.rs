@@ -3,12 +3,13 @@ use webview2_com::CapturePreviewCompletedHandler;
 use webview2_com::Microsoft::Web::WebView2::Win32::COREWEBVIEW2_CAPTURE_PREVIEW_IMAGE_FORMAT_PNG;
 use windows::Win32::System::Com::StructuredStorage::CreateStreamOnHGlobal;
 use windows::Win32::System::Com::{STATFLAG_NONAME, STATSTG, STREAM_SEEK_SET};
+use windows::Win32::Foundation::{BOOL, HGLOBAL};
 use wry::WebViewExtWindows;
 
 pub fn capture(view: &wry::WebView, done: impl FnOnce(Vec<u8>) + 'static) {
     unsafe {
         let Ok(core) = view.controller().CoreWebView2() else { return };
-        let Ok(stream) = CreateStreamOnHGlobal(Default::default(), true) else { return };
+        let Ok(stream) = CreateStreamOnHGlobal::<HGLOBAL, BOOL>(HGLOBAL::default(), BOOL::from(true)) else { return };
         let s2 = stream.clone();
         let handler = CapturePreviewCompletedHandler::create(Box::new(move |res| {
             if res.is_ok() {
