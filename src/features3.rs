@@ -175,13 +175,17 @@ impl App {
         self.http_nonce.insert(nonce.clone(), (id, url.clone()));
         self.tabs[i].url = url.clone();
         let host = esc(&host_of(&url));
-        let html = format!(r#"<!doctype html><meta charset="utf-8"><title>Nicht sicher</title><style>
-html,body{{height:100%;margin:0;background:radial-gradient(circle at 30% 20%,#3a1a2a,#0a0f1e);color:#e8f1ff;font:15px system-ui,sans-serif}}
-body{{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px}}
-.i{{width:64px;height:64px;border-radius:50% 50% 50% 12px;background:linear-gradient(135deg,#fb7185,#fbbf24);display:flex;align-items:center;justify-content:center;font-size:30px}}
-h1{{margin:0;font-weight:600}}p{{margin:0;opacity:.75;max-width:460px}}.r{{display:flex;gap:10px}}
-a{{padding:10px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:inherit;text-decoration:none}}a.p{{background:linear-gradient(135deg,#5ad1ff,#7b6bff);color:#06101f;border:0;font-weight:600}}</style>
-<div class="i">⚠</div><h1>Keine sichere Verbindung</h1><p><b>{host}</b> bietet kein HTTPS an. Deine Daten könnten unterwegs mitgelesen oder verändert werden.</p>
+        let html = format!(r#"<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nicht sicher</title><style>
+:root{{color-scheme:dark;--bg:#11161d;--surface:#191f26;--line:#35414a;--text:#e5e9ec;--muted:#a5afb5;--accent:#70c8bd}}
+*{{box-sizing:border-box}}html,body{{min-height:100%;margin:0;background:var(--bg);color:var(--text);font:14px/1.5 "Segoe UI Variable","Segoe UI",system-ui,sans-serif}}
+body{{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;text-align:center;padding:28px}}
+.i{{width:44px;height:44px;border:1px solid #68484b;border-radius:7px;background:#282023;display:grid;place-items:center;color:#e3a2a0}}
+.i svg{{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}}
+h1{{margin:4px 0 0;font-size:20px;font-weight:600;letter-spacing:-.02em}}p{{margin:0;color:var(--muted);max-width:480px}}.host{{color:var(--text)}}.r{{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:8px}}
+a{{min-height:36px;padding:8px 13px;border-radius:5px;border:1px solid var(--line);background:var(--surface);color:var(--text);text-decoration:none}}
+a:hover{{background:#202a30;border-color:#53636b}}a:focus-visible{{outline:2px solid var(--accent);outline-offset:2px}}a.p{{background:#24413f;color:#c5e7e2;border-color:#3e6e68;font-weight:600}}
+@media(prefers-reduced-motion:reduce){{*{{scroll-behavior:auto!important}}}}</style>
+<div class="i" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v5"/><path d="M12 17h.01"/></svg></div><h1>Keine sichere Verbindung</h1><p><b class="host">{host}</b> bietet kein HTTPS an. Deine Daten könnten unterwegs mitgelesen oder verändert werden.</p>
 <div class="r"><a class="p" href="javascript:history.back()">Zurück</a><a href="{}#lf-allow-{nonce}">Trotzdem öffnen</a></div>"#, esc(&url));
         if let Some(v) = &self.tabs[i].view { let _ = v.load_html(&html); }
     }
@@ -268,7 +272,7 @@ a{{padding:10px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.2);ba
                         let g = |k: &str| s[k].as_u64().unwrap_or(0);
                         let (mal, sus) = (g("malicious"), g("suspicious"));
                         let total = mal + sus + g("harmless") + g("undetected");
-                        Ok(if mal > 0 { format!("⚠ GEFAHR: {mal}/{total} Scanner melden Schadsoftware") } else if sus > 0 { format!("⚠ verdächtig ({sus}/{total})") } else { format!("✓ sauber (0/{total})") })
+                        Ok(if mal > 0 { format!("GEFAHR: {mal}/{total} Scanner melden Schadsoftware") } else if sus > 0 { format!("Verdächtig ({sus}/{total})") } else { format!("Sauber (0/{total})") })
                     }
                     Err(ureq::Error::Status(404, _)) => Ok("? unbekannt – noch nie bei VirusTotal gesehen, Vorsicht".into()),
                     Err(ureq::Error::Status(401, _)) | Err(ureq::Error::Status(403, _)) => Ok("API-Schlüssel ungültig".into()),

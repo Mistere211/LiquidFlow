@@ -120,7 +120,7 @@ impl Default for Settings {
             site_rules: HashMap::new(),
             keymap: HashMap::new(),
             clear_on_exit: false,
-            accent: "#5ad1ff".into(),
+            accent: "#70c8bd".into(),
             ext_disabled: vec![],
             block_third_party_cookies: false,
             sync_folder: String::new(),

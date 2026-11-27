@@ -1,53 +1,162 @@
 <!doctype html><meta charset="utf-8">
 <style>
-:root{--bg:#0a0f1e;--g:rgba(255,255,255,.07);--l:rgba(255,255,255,.14);--ac:#5ad1ff;color-scheme:dark}
-*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bgimg,var(--bg));color:#e8f1ff;font:14px system-ui,sans-serif;overflow:hidden}
-button,input,select{font:inherit;color:inherit}
-.logo{width:22px;height:22px;flex:none;border-radius:50% 50% 50% 6px;background:linear-gradient(135deg,#5ad1ff,#7b6bff)}
-.glass{background:var(--g);border:1px solid var(--l);border-radius:14px}
-.row{display:flex;align-items:center;gap:10px}
-.btn{background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 12px;cursor:pointer}
-.btn:hover,.on{border-color:var(--ac)}
-/* bar */
-.bar{padding:8px;display:flex;flex-direction:column;gap:8px;height:100%}
-.bar .glass{height:36px;padding:0 12px}
-.bar input{flex:1;background:none;border:0;outline:0}
-.ic{padding:3px 9px;border-radius:9px}
-.tab{transition:transform .2s cubic-bezier(.3,1.6,.5,1),background .2s,border-color .2s}.tab:hover{transform:translateY(-1px) scale(1.04);background:rgba(255,255,255,.13)}
-.btn{transition:transform .15s,border-color .15s}.btn:hover{transform:translateY(-1px)}.pill{transition:filter .2s}.pill:hover{filter:brightness(1.3)}
-.pill{font-size:12px;padding:3px 10px;border-radius:99px;background:var(--g);cursor:pointer}
-.pill.connected{background:#1d7a4a}.pill.connecting{background:#8a6d1a}.pill.error{background:#8a2a2a}
-/* side */
-.side{display:flex;flex-direction:column;gap:6px;padding:8px 8px 8px 8px;height:100%;overflow:auto}
-.side.top{flex-direction:row;align-items:center;overflow-x:auto}
-.tab{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 6px;border-radius:10px;background:var(--g);cursor:pointer;border:1px solid transparent}
-.tab.act{border-color:var(--ac)}.tab.paused{opacity:.5}
-.tab img{width:20px;height:20px;border-radius:5px;flex:none}
-.tab .t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tab .x{opacity:.5}
+:root{color-scheme:dark;--bg:#11161d;--surface:#171d25;--raised:#1d252e;--hover:#252f39;--line:#303a45;--line-soft:#252e37;--text:#e5e9ec;--muted:#9ba6af;--quiet:#77838d;--accent:#70c8bd;--focus:rgba(112,200,189,.35);--good:#79c6a0;--warn:#d5b578;--bad:#d98b91;--radius:7px;--radius-sm:5px;--space:8px;--ease:150ms ease;--g:#20272f;--l:#303a45;--ac:var(--accent)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bgimg,var(--bg));color:var(--text);font:13px/1.45 "Segoe UI Variable","Segoe UI",system-ui,sans-serif;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{font-weight:500}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+::selection{background:rgba(112,200,189,.28);color:var(--text)}
+.logo{width:22px;height:22px;flex:none;border:1px solid rgba(112,200,189,.55);border-radius:6px;background:#1a3535;display:grid;place-items:center;color:var(--accent)}
+.glass{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.row{display:flex;align-items:center;gap:8px;min-width:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:30px;background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-sm);padding:5px 10px;cursor:pointer;transition:background var(--ease),border-color var(--ease),color var(--ease)}
+.btn:hover,.btn.on{background:var(--hover);border-color:#52616b}
+.btn:active{background:#2b3840}
+.btn:disabled{opacity:.48;cursor:default}
+.btn.on{color:var(--accent)}
+.btn.ic{width:30px;height:30px;min-height:30px;padding:0;display:inline-grid;place-items:center;flex:none}
+.icon{width:16px;height:16px;display:block;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.pill{display:inline-flex;align-items:center;gap:5px;max-width:230px;min-height:24px;padding:2px 8px;border:1px solid var(--line);border-radius:5px;background:#1b222a;color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button.pill{cursor:pointer}
+.pill.connected{color:var(--good);border-color:#345344}.pill.connecting{color:var(--warn);border-color:#55482f}.pill.error{color:var(--bad);border-color:#563b40}
+.row input:not([type=checkbox]):not([type=range]),.row select,.settings-main input:not([type=checkbox]):not([type=range]),.settings-main select,.settings-main textarea,.card input:not([type=checkbox]):not([type=range]),.card select,.card textarea{background:#11171d;border:1px solid var(--line);border-radius:var(--radius-sm);padding:7px 9px;color:var(--text)}
+input::placeholder,textarea::placeholder{color:var(--quiet)}
+input[type=checkbox]{accent-color:var(--accent)}
+input[type=range]{accent-color:var(--accent)}
+select{max-width:100%}
+/* Browser chrome */
+.bar{padding:7px 9px;display:flex;flex-direction:column;gap:6px;height:100%;background:#12171d;border-bottom:1px solid var(--line-soft)}
+.bar .glass{height:35px;min-height:35px;padding:0 5px;background:transparent;border-color:transparent;border-radius:6px}
+.bar .navline{gap:3px}
+.bar .addressline{background:#1a2027;border-color:#343e47;padding:0 5px;gap:5px}
+.bar .addressline:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px var(--focus)}
+.bar input{flex:1;min-width:30px;background:transparent!important;border:0!important;outline:0;padding:5px 7px!important;font-size:13px}
+.bar input:focus-visible{outline:0}
+.bar input#u{font-family:"Cascadia Code","Segoe UI",sans-serif;font-size:12px}
+.bar .brand{width:24px;height:24px}
+.bar .separator{height:18px;border-left:1px solid var(--line);margin:0 2px}
+.menu-wrap{position:relative;flex:none}
+.menu{position:absolute;z-index:20;right:0;top:34px;width:min(260px,calc(100vw - 16px));max-height:calc(100vh - 58px);overflow:auto;padding:5px;background:#1a2027;border:1px solid #39444e;border-radius:7px;box-shadow:0 8px 24px #0005}
+.menu button{width:100%;display:flex;align-items:center;gap:9px;min-height:32px;padding:5px 8px;border:0;border-radius:4px;background:none;color:var(--text);text-align:left;cursor:pointer}
+.menu button:hover,.menu button:focus-visible{background:var(--hover)}
+.menu .menu-label{padding:7px 8px 4px;color:var(--quiet);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.menu hr{border:0;border-top:1px solid var(--line-soft);margin:4px 2px}
+.menu[hidden]{display:none}
+/* Tabs */
+.side{display:flex;flex-direction:column;gap:4px;padding:6px;height:100%;overflow:auto;overflow-x:hidden;background:#141a20;border-right:1px solid var(--line-soft);scrollbar-width:thin;scrollbar-color:#3a4650 transparent}
+.side.top{flex-direction:row;align-items:center;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line-soft)}
+.tab{display:flex;align-items:center;gap:8px;min-height:34px;min-width:0;padding:0 7px;border-radius:5px;background:transparent;cursor:pointer;border:1px solid transparent;transition:background var(--ease),border-color var(--ease);flex:none}
+.tab:hover{background:#20272f}
+.tab.act{background:#202a30;border-color:#33444a;color:#f0f3f4}
+.tab.paused{color:var(--quiet)}
+.tab img{width:18px;height:18px;border-radius:4px;flex:none}
+.tab .t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab .x{opacity:.55;display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;cursor:pointer}
+.tab .x:hover{opacity:1;background:#3a2c30;color:#f1a7aa}
 .side:not(.wide) .t,.side:not(.wide) .x{display:none}
 .side:not(.wide):not(.top) .tab{justify-content:center;width:46px}
-/* overlays */
-.ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bgimg,radial-gradient(circle at 30% 20%,#16305a,#0a0f1e))}
-.card{max-height:92vh;overflow:auto;width:min(560px,92vw);padding:28px;display:flex;flex-direction:column;gap:16px}
-.card h1{margin:0;font-size:24px}.opts{display:flex;flex-wrap:wrap;gap:8px}
-label.sw{display:flex;justify-content:space-between;align-items:center}
+.side.top .tab{width:clamp(110px,16vw,190px);max-width:210px;min-width:90px;min-height:32px}
+.side.top .tab .t{font-size:12px}
+.side.top .tab[data-id]{border-bottom-color:transparent}
+.side.top .tab.act{border-bottom-color:var(--accent)}
+.side .tab[data-id]{border-left-width:2px!important}
+.side .tab-mark{display:grid;place-items:center;width:20px;height:20px;color:var(--quiet);flex:none}
+.side .tab.act .tab-mark{color:var(--accent)}
+.side .tab-control{justify-content:center;width:36px;height:30px;min-height:30px;color:var(--muted)}
+.side:not(.wide):not(.top) .tab-control{width:46px}
+.side.top .tab-control{width:32px;min-width:32px}
+/* Overlays and common content */
+.ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,10,13,.70);z-index:5}
+.card{max-height:calc(100vh - 32px);overflow:auto;width:min(600px,94vw);padding:20px;display:flex;flex-direction:column;gap:13px;background:#171d24;border:1px solid #35404a;border-radius:8px;box-shadow:0 16px 48px #0006}
+.card h1{margin:0;font-size:19px;line-height:1.3;font-weight:600;letter-spacing:-.02em}
+.card h3{margin:8px 0 0;font-size:12px;line-height:1.35;color:#cbd2d6}
+.card p{color:var(--muted)}
+.opts{display:flex;flex-wrap:wrap;gap:7px}
+label.sw{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:38px;padding:7px 9px;border-bottom:1px solid var(--line-soft);border-radius:4px;color:#d4dadd}
+label.sw:hover{background:#1c242b}
+label.sw input[type=checkbox]{width:16px;height:16px;flex:none}
+label.sw input[type=text],label.sw input[type=password],label.sw input[type=number]{width:min(230px,48%)}
+.card .tab{background:#1d252c;border-color:var(--line-soft)}
+.card .tab:hover{background:#27323a}
+.card .row{flex-wrap:wrap}
+.card .row>input:not([type=checkbox]):not([type=range]){min-width:80px}
+.card small{color:var(--muted)}
+.settings-shell{width:min(100%,1080px);height:min(760px,calc(100vh - 32px));max-height:calc(100vh - 32px);display:grid;grid-template-columns:210px minmax(0,1fr);overflow:hidden;background:#171d24;border:1px solid #35404a;border-radius:8px}
+.settings-nav{display:flex;flex-direction:column;gap:3px;padding:16px 10px;background:#141a20;border-right:1px solid var(--line)}
+.settings-brand{display:flex;align-items:center;gap:9px;padding:3px 8px 15px;border-bottom:1px solid var(--line-soft);margin-bottom:7px}
+.settings-brand strong{font-size:13px;letter-spacing:.01em}
+.settings-nav button{display:flex;align-items:center;gap:9px;min-height:34px;padding:6px 9px;text-align:left;background:transparent;border:1px solid transparent;border-radius:5px;color:var(--muted);cursor:pointer}
+.settings-nav button:hover{background:#20272f;color:var(--text)}
+.settings-nav button.selected{background:#202a30;border-color:#33444a;color:var(--accent)}
+.settings-main{overflow:auto;padding:22px clamp(16px,4vw,36px);scrollbar-width:thin;scrollbar-color:#3a4650 transparent}
+.settings-main>h1{font-size:20px;margin:0 0 5px}
+.settings-intro{margin:0 0 19px}
+.settings-intro h1{font-size:20px;margin:0 0 5px}
+.settings-intro .intro{margin:0;color:var(--muted);max-width:650px}
+.settings-main>.intro{margin:0 0 18px;color:var(--muted);max-width:650px}
+.settings-section{max-width:720px;padding:0 0 18px;margin:0 0 18px;border-bottom:1px solid var(--line-soft)}
+.settings-section h2{margin:0 0 7px;font-size:12px;font-weight:650;color:#dce1e4}
+.settings-section>p{margin:0 0 8px;color:var(--muted);font-size:12px}
+.settings-search{width:100%;margin-bottom:12px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.settings-main .bridge-label textarea{width:min(360px,52%);resize:vertical}
+.shield-ov{align-items:flex-start;justify-content:flex-end;padding:86px 12px 12px;background:rgba(6,10,13,.44)}
+.shield-card{width:min(360px,calc(100vw - 24px));max-height:calc(100vh - 100px);padding:16px}
+.settings-main .accent-swatches{flex-wrap:wrap}
+.side .tab-control svg{color:inherit}
+.settings-main .ext-row,.settings-main .shortcut-row{min-height:38px;padding:4px 8px;border-bottom:1px solid var(--line-soft)}
+.settings-main .ext-row input[type=checkbox]{width:16px;height:16px}
+.settings-main .shortcut-row button{min-width:115px}
+.accent-swatches{padding:7px 9px}
+.swatch{width:25px;height:25px;padding:0;border:2px solid var(--line);border-radius:50%;background:var(--swatch);cursor:pointer}
+.swatch[aria-pressed=true]{outline:2px solid var(--text);outline-offset:2px}
+.close-settings{margin-top:8px;align-self:flex-end}
+.find-panel{padding:7px;height:100%;background:#151b21}
+.find-panel .glass{height:40px;padding:0 4px 0 10px;background:#1a2027;border-color:var(--line)}
+.find-panel input{background:transparent!important;border:0!important;outline:0!important}
+.tools-panel{display:flex;flex-direction:column;gap:10px;height:100%;padding:12px;background:#151b21}
+.tools-panel textarea{flex:1;min-height:80px;resize:none;background:#1a2027;border:1px solid var(--line);border-radius:5px;padding:10px;color:var(--text)}
+.tools-panel input{background:#1a2027;border:1px solid var(--line);border-radius:5px;padding:8px;color:var(--text)}
+.suggest-list{padding:5px;max-height:100%;overflow:auto;background:#171d24}
+.suggest-list .tab{width:100%;min-height:42px}
+.suggest-list .tab small,.library-row small{color:var(--muted)}
+.library-panel{width:min(720px,94vw);max-height:calc(100vh - 32px)}
+.library-row{width:100%;min-height:48px}
+.history-date{margin:12px 0 4px;padding-top:8px;border-top:1px solid var(--line-soft);color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.02em}
+.library-row b{font-weight:550}
+.vault-entry{padding:5px 0;border-bottom:1px solid var(--line-soft)}
+.vault-alert{color:var(--bad);border-color:#563b40}
+.vault-warn{color:var(--warn);border-color:#55482f}
+.tab-mark .icon{width:16px;height:16px}
+.preview-card{height:100%;padding:8px;background:#171d24;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.ov .card [data-a] .icon{width:15px;height:15px;vertical-align:middle}
+.muted{color:var(--muted)}
+[hidden]{display:none!important}
+@media(max-width:680px){.settings-shell{grid-template-columns:54px minmax(0,1fr)}.settings-nav{padding:10px 5px}.settings-brand{padding:4px 8px}.settings-brand strong,.settings-nav .nav-text{display:none}.settings-nav button{justify-content:center;padding:7px}.settings-nav button .icon{width:17px;height:17px}.settings-main{padding:17px 13px}.bar .status-extra{display:none}}
+@media(max-width:420px){.settings-shell{grid-template-columns:46px minmax(0,1fr)}.settings-nav{padding:8px 3px}.settings-main{padding:14px 10px}.bar .optional,.bar .addressline>.muted{display:none}.bar #nt2{max-width:72px}.bar #v{max-width:92px}.settings-main .shortcut-row{align-items:flex-start}.settings-main .shortcut-row button{min-width:80px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 <div id="app"></div>
 <script>
 const R=window.ROLE, send=o=>window.ipc.postMessage(JSON.stringify(o)), $=document.getElementById('app');
-let S=null, step=0, draft=null, capturing=null;
+let S=null, step=0, draft=null, capturing=null, settingsPage='general';
 window.focusUrl=()=>{const i=document.getElementById('u'); if(i){i.focus(); i.select();}};
 const combo=e=>{let m=''; if(e.ctrlKey)m+='Ctrl+'; if(e.altKey)m+='Alt+'; if(e.shiftKey)m+='Shift+'; if(e.metaKey)m+='Meta+'; let k=e.key; if(k.length===1)k=k.toUpperCase(); if(k===' ')k='Space'; return m+k;};
-const fav=u=>{try{return 'https://icons.duckduckgo.com/ip3/'+new URL(u).hostname+'.ico'}catch(e){return ''}};
+const paths={back:'<path d="m15 18-6-6 6-6"/><path d="M20 12H9"/><path d="M9 12H4"/>',forward:'<path d="m9 18 6-6-6-6"/><path d="M4 12h11"/><path d="M15 12h5"/>',reload:'<path d="M20 7v5h-5"/><path d="M19 12a7 7 0 0 0-12-4L5 10"/><path d="M4 17v-5h5"/><path d="M5 12a7 7 0 0 0 12 4l2-2"/>',home:'<path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/>',bookmark:'<path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-4-6 4z"/>',download:'<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',settings:'<path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1 1.1.9-1.1 1.9-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.2 1.5h-2.2l-.3-1.5a7.8 7.8 0 0 1-1.7 0l-.3 1.5H9.7l-.2-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.1-1.9 1.1-.9a7 7 0 0 1 0-1.8l-1.1-.9 1.1-1.9 1.4.5a7.8 7.8 0 0 1 1.5-.9l.2-1.5h2.2l.3 1.5a7.8 7.8 0 0 1 1.7 0l.3-1.5h2.2l.2 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.1 1.9-1.1.9a7 7 0 0 1 0 1.8Z"/>',shield:'<path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/>',history:'<path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',menu:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',close:'<path d="m18 6-12 12M6 6l12 12"/>',plus:'<path d="M12 5v14M5 12h14"/>',more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>',lock:'<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/><path d="M12 14v3"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',window:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M7 6.5h.01M10 6.5h.01"/>',bookmarkList:'<path d="M6 3.5A1.5 1.5 0 0 1 7.5 2h9A1.5 1.5 0 0 1 18 3.5V20l-6-4-6 4z"/><path d="M9 7h6"/>',puzzle:'<path d="M19 13h-2a2 2 0 1 0-4 0H9v4a2 2 0 1 1-4 0v-4H3V5h5a2 2 0 1 0 4 0h4v4a2 2 0 1 1 0 4h3Z"/>',key:'<circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.2-8.2 3 3-2 2 2 2-3 3-2-2-2 2"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>',shieldOff:'<path d="M4.3 4.3 20 20"/><path d="M12 22s8-4 8-11V5l-8-3-3.5 1.3"/><path d="M4 5v6c0 3.5 2.5 6.4 5 8.4"/>',keyboard:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h.01M10 9h.01M13 9h.01M16 9h.01M7 12h.01M10 12h.01M13 12h.01M16 12h.01M8 15h8"/>',palette:'<circle cx="12" cy="12" r="9"/><path d="M7.5 10h.01M10 7.5h.01M14 7.5h.01M16.5 10h.01"/><path d="M12 21a2 2 0 0 1-2-2c0-1.2.9-2 2-2h1.2a2 2 0 0 0 2-2c0-1.1-.9-2-2-2"/>',shieldAlert:'<path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',trash:'<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5m4-5v5"/>',copy:'<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',check:'<path d="m5 12 4 4L19 6"/>',external:'<path d="M14 3h7v7"/><path d="m10 14 11-11"/><path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/>',list:'<path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/>',minus:'<path d="M5 12h14"/>',shieldCheck:'<path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/>',sunrise:'<path d="M12 2v7"/><path d="m4.9 4.9 5 5"/><path d="M2 12h7"/><path d="M20 12h2"/><path d="m14 10 5-5"/><path d="M4 20h16"/><path d="M6 16a6 6 0 0 1 12 0"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',folder:'<path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',refresh:'<path d="M20 7v5h-5"/><path d="M19 12a7 7 0 0 0-12-4L5 10"/><path d="M4 17v-5h5"/><path d="M5 12a7 7 0 0 0 12 4l2-2"/>',moon:'<path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/>'};
+Object.assign(paths,{maximize:'<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/>',print:'<path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/><path d="M18 12h.01"/>'});
+const icon=(name,cls='icon')=>`<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${paths[name]||paths.info}</svg>`;
+const mark=`<span class="logo" aria-hidden="true">${icon('globe','icon')}</span>`;
+const siteLetter=u=>{try{return new URL(u).hostname.replace(/^www\./,'').charAt(0).toUpperCase()||'W'}catch(e){return 'W'}};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const set=(k,v)=>{(draft||S.settings)[k]=v; if(R==='settings') send({t:'settings',s:S.settings}); else view();};
+const set=(k,v)=>{if(R==='settings'){S.settings[k]=v;if(draft)draft[k]=v;send({t:'settings',s:S.settings});}else{(draft||S.settings)[k]=v;view();}};
 const fmt=t=>t?new Date(t*1000).toLocaleDateString():'noch nie';
 const sel=(k,o,cur)=>`<select data-s="${k}">${o.map(([v,l])=>`<option value="${v}" ${cur===v?'selected':''}>${l}</option>`).join('')}</select>`;
 function blSection(){
   const L=S.settings.blocklists||[];
   return `<div class="row"><input id="blu" type="text" placeholder="Blocklist-Link einfügen (z. B. von GitHub)…" style="flex:1;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px"><button class="btn" id="bla">Hinzufügen</button></div>
   <div class="row"><button class="btn" id="blf">Datei / ZIP…</button><button class="btn" id="bld">Ordner…</button><span style="opacity:.6">${(S.bl_total||0).toLocaleString()} Domains aktiv</span></div>`+
-  L.map(l=>`<div class="row"><input type="checkbox" ${l.enabled?'checked':''} data-bt="${l.id}"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.name)} · ${l.count.toLocaleString()} · ${fmt(l.last_updated)}</span><button class="btn" data-br="${l.id}">↻</button><button class="btn" data-bx="${l.id}">✕</button></div>`).join('');
+  L.length?L.map(l=>`<div class="row"><input type="checkbox" ${l.enabled?'checked':''} data-bt="${esc(l.id)}" aria-label="Blockliste aktivieren: ${esc(l.name)}"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.name)} · ${l.count.toLocaleString()} · ${fmt(l.last_updated)}</span><button class="btn ic" data-br="${esc(l.id)}" aria-label="Blockliste aktualisieren: ${esc(l.name)}">${icon('refresh')}</button><button class="btn ic" data-bx="${esc(l.id)}" aria-label="Blockliste entfernen: ${esc(l.name)}">${icon('close')}</button></div>`).join(''):'<p class="muted">Keine zusätzlichen Blocklisten eingerichtet.</p>';
 }
 function bindBl(){
   const a=document.getElementById('bla'); if(!a) return;
@@ -65,33 +174,41 @@ function importSection(){ const imps=(S.x&&S.x.imports)||[]; if(!window.impSel) 
   return imps.length?imps.map(i=>`<label class="sw">${esc(i.name)}<input type="checkbox" data-imp="${esc(i.id)}" ${window.impSel.has(i.id)?'checked':''}></label>`).join('')+`<div class="row"><label class="c"><input type="checkbox" id="impb" checked> Lesezeichen</label><label class="c"><input type="checkbox" id="imph" checked> Verlauf</label><button class="btn on" id="impgo">Importieren</button></div><small style="opacity:.6">Gespeicherte Passwörter werden nicht übernommen (sie sind verschlüsselt). Der andere Browser sollte geschlossen sein.</small>`:'<p style="opacity:.7;margin:0">Keine Chrome-, Edge-, Brave-, Vivaldi- oder Firefox-Profile gefunden.</p>'; }
 function bindImport(){ $.querySelectorAll('[data-imp]').forEach(e=>e.onchange=()=>{ e.checked?window.impSel.add(e.dataset.imp):window.impSel.delete(e.dataset.imp); });
   const g=document.getElementById('impgo'); if(g) g.onclick=()=>send({t:'import_run',ids:[...window.impSel],bm:document.getElementById('impb').checked,hist:document.getElementById('imph').checked}); }
-const THEMES={liquid:'radial-gradient(circle at 30% 20%,#16305a,#0a0f1e)',ocean:'linear-gradient(135deg,#0f4c75,#0a1628)',aurora:'linear-gradient(135deg,#0b3d2e,#1a1040)',sunset:'linear-gradient(135deg,#4a1942,#1b0a2a)',graphite:'linear-gradient(135deg,#1c1f26,#0c0d10)'};
-function render(st){ S=st; document.documentElement.style.setProperty('--bgimg',THEMES[st.settings.theme]||THEMES.liquid); document.documentElement.style.setProperty('--ac',st.settings.accent||'#5ad1ff'); if(!draft) draft=JSON.parse(JSON.stringify(st.settings)); view(); }
+const THEMES={liquid:'#11161d',ocean:'#101a20',aurora:'#111c19',sunset:'#201719',graphite:'#11161d'};
+function render(st){ S=st; document.documentElement.style.setProperty('--bgimg',THEMES[st.settings.theme]||THEMES.liquid); document.documentElement.style.setProperty('--accent',st.settings.accent||'#70c8bd'); if(!draft) draft=JSON.parse(JSON.stringify(st.settings)); view(); }
 function view(){
   const s=S.settings, ae=document.activeElement;
   if((['settings','onboard','palette','find','history','bookmarks','downloads','vault','tools','leak','profiles','workspaces','privacy','qr','import'].includes(R))&&ae&&((ae.tagName==='INPUT'&&(ae.type==='text'||ae.type==='password'))||ae.tagName==='TEXTAREA')) return;
   if(R==='bar'){
     const a=S.tabs.find(t=>t.id===S.active)||{url:''}, ui=document.activeElement&&document.activeElement.id; if(a.url.startsWith("liquid:"))a.url="";
     if(ui==='u'||ui==='q') return;
-    $.innerHTML=`<div class="bar"><div class="glass row" style="gap:4px"><button class="btn ic" data-a="back">←</button><button class="btn ic" data-a="forward">→</button><button class="btn ic" data-a="reload">⟳</button><input id="u" placeholder="Link eingeben…" value="${esc(a.url)}"><button class="btn ic" data-a="bookmark">${S.site.bookmarked?"★":"☆"}</button></div>
-    <div class="glass row"><div class="logo"></div><input id="q" placeholder="Suchen mit ${esc(s.search_engine)}…">
-    ${(S.exts||[]).filter(x=>x.on&&x.popup).map(x=>`<button class="btn ic" data-ep="${x.id}" title="${esc(x.name)}">${esc(x.name.slice(0,1).toUpperCase())}</button>`).join('')}${S.notice?`<span class="pill" id="nt2" style="background:#8a6d1a;cursor:pointer">${esc(S.notice)} ✕</span>`:''}${S.update?`<span class="pill" data-a="update_install" style="background:#1d7a4a;cursor:pointer">${S.update==='restart'?'↻ Neu starten':'⬆ Update'}</span>`:''}${S.x&&S.x.gaming?'<span class="pill" data-a="gaming_toggle" style="background:#6d28d9;cursor:pointer">🎮 Gaming</span>':''}<span class="pill" title="Speicher aller Browser-Prozesse">💾 ${(S.x&&S.x.mem)||0} MB</span><span class="pill" id="sh" title="Seiten-Schutz">🛡 ${S.blocked||0}</span>${(S.x&&S.x.route&&S.x.route.length)?`<span class="pill" title="${esc(S.x.route.join('\n'))}">🧅 ${esc(S.x.route.map(h=>h.split(' ')[0]).join(' → '))}</span>`:''}<span class="pill ${S.vpn}" id="v">VPN: ${S.vpn}</span><button class="btn ic" data-a="downloads">⬇</button><button class="btn ic" id="st">⚙</button></div></div>`;
+    const menuItems=[['plus','Neuer Tab','new_tab'],['eye','Privater Tab','new_private'],['refresh','Geschlossenen Tab öffnen','reopen_tab'],['history','Verlauf','history'],['bookmarkList','Lesezeichen','bookmarks'],['download','Downloads','downloads'],['puzzle','Einstellungen & Erweiterungen','settings'],['window','Arbeitsbereiche','workspaces'],['shieldCheck','Datenschutz-Bericht','privacy'],['keyboard','Befehlspalette','palette'],['maximize','Vollbild','fullscreen'],['print','Drucken','print']];
+    $.innerHTML=`<div class="bar"><div class="glass row navline">
+      <button class="btn ic" data-a="back" aria-label="Zurück" title="Zurück">${icon('back')}</button><button class="btn ic" data-a="forward" aria-label="Vorwärts" title="Vorwärts">${icon('forward')}</button><button class="btn ic" data-a="reload" aria-label="Neu laden" title="Neu laden">${icon('reload')}</button>
+      <span class="separator" aria-hidden="true"></span><button class="btn ic" id="sh" aria-label="Seiten-Schutz für ${esc(S.site.host||'diese Seite')}" title="${esc(S.site.host||'Keine Website')} · Schutz">${icon(S.site.host?'shield':'globe')}</button><input id="u" aria-label="Adresse oder Suche" autocomplete="off" spellcheck="false" placeholder="Adresse oder Suchbegriff eingeben" value="${esc(a.url)}"><button class="btn ic" data-a="bookmark" aria-label="${S.site.bookmarked?'Lesezeichen entfernen':'Lesezeichen setzen'}" title="${S.site.bookmarked?'Lesezeichen entfernen':'Lesezeichen setzen'}">${icon('bookmark')}</button>
+      <span class="separator status-extra" aria-hidden="true"></span><button class="btn ic status-extra" data-a="downloads" aria-label="Downloads" title="Downloads">${icon('download')}</button><button class="btn ic status-extra" id="st" aria-label="Einstellungen" title="Einstellungen">${icon('settings')}</button>
+      <div class="menu-wrap"><button class="btn ic" id="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="Browser-Menü" title="Browser-Menü">${icon('menu')}</button><div class="menu" id="mainmenu" role="menu" hidden>
+      <div class="menu-label">Navigation</div>${menuItems.slice(0,3).map(([ic,l,id])=>`<button type="button" role="menuitem" data-a="${id}">${icon(ic)}<span>${l}</span></button>`).join('')}<hr><div class="menu-label">Bibliothek</div>${menuItems.slice(3,6).map(([ic,l,id])=>`<button type="button" role="menuitem" data-a="${id}">${icon(ic)}<span>${l}</span></button>`).join('')}<hr><div class="menu-label">Liquid Flow</div>${menuItems.slice(6).map(([ic,l,id])=>`<button type="button" role="menuitem" data-a="${id}">${icon(ic)}<span>${l}</span></button>`).join('')}</div></div></div>
+      <div class="glass row addressline"><span class="logo brand">${icon('globe')}</span><span class="muted" style="font-size:11px;white-space:nowrap">Suchen · ${esc(s.search_engine)}</span><input id="q" aria-label="Websuche" placeholder="Suchbegriff eingeben…">
+      ${(S.exts||[]).filter(x=>x.on&&x.popup).map(x=>`<button class="btn ic optional" data-ep="${esc(x.id)}" aria-label="${esc(x.name)}" title="${esc(x.name)}">${esc(x.name.slice(0,1).toUpperCase())}</button>`).join('')}${S.notice?`<button class="pill" id="nt2" title="Meldung schließen">${icon('info')}${esc(S.notice)}${icon('close')}</button>`:''}${S.update?`<button class="pill" data-a="update_install" style="color:var(--good)" title="Update installieren">${icon(S.update==='restart'?'reload':'download')}${S.update==='restart'?'Neu starten':'Update verfügbar'}</button>`:''}${S.x&&S.x.gaming?`<button class="pill" data-a="gaming_toggle" title="Gaming-Modus ist aktiv">${icon('window')}Gaming</button>`:''}<span class="pill status-extra" title="Speicher aller Browser-Prozesse">${icon('window')}${(S.x&&S.x.mem)||0} MB</span><button class="pill status-extra" id="shield-count" title="Geblockte Anfragen · Seiten-Schutz öffnen">${icon('shield')}${S.blocked||0}</button>${(S.x&&S.x.route&&S.x.route.length)?`<span class="pill status-extra" title="${esc(S.x.route.join('\n'))}">${icon('globe')}${esc(S.x.route.map(h=>h.split(' ')[0]).join(' · '))}</span>`:''}<button class="pill ${esc(S.vpn)}" id="v" title="Tor-Verbindung umschalten">${icon('shieldCheck')}Tor · ${esc(S.vpn)}</button></div></div>`;
     u.onkeydown=e=>{ if(e.key==='Enter'){send({t:'suggest_close'});send({t:'go',v:u.value});} else if(e.key==='Escape') send({t:'suggest_close'}); }; let sgt; u.oninput=()=>{clearTimeout(sgt); sgt=setTimeout(()=>send({t:'suggest',q:u.value}),90);}; q.onkeydown=e=>{if(e.key==='Enter'){send({t:'search',v:q.value});q.value='';q.blur()}};
-    v.onclick=()=>{s.vpn_enabled=!s.vpn_enabled;send({t:'settings',s})}; st.onclick=()=>send({t:'open_settings'}); sh.onclick=()=>send({t:'open_shield'}); $.querySelectorAll('[data-a]').forEach(e=>e.onclick=()=>send({t:'action',id:e.dataset.a}));
+    v.onclick=()=>{s.vpn_enabled=!s.vpn_enabled;send({t:'settings',s})}; st.onclick=()=>send({t:'open_settings'}); sh.onclick=()=>send({t:'open_shield'}); document.getElementById('shield-count').onclick=()=>send({t:'open_shield'}); $.querySelectorAll('[data-a]').forEach(e=>e.onclick=()=>send({t:'action',id:e.dataset.a}));
     $.querySelectorAll('[data-ep]').forEach(e=>e.onclick=()=>send({t:'ext_popup',id:e.dataset.ep})); if(window.nt2) nt2.onclick=()=>send({t:'notice_clear'});
+    menubtn.onclick=()=>{const open=mainmenu.hidden;mainmenu.hidden=!open;menubtn.setAttribute('aria-expanded',String(open));if(open)mainmenu.querySelector('button').focus();};
+    mainmenu.onkeydown=e=>{if(e.key==='Escape'){mainmenu.hidden=true;menubtn.focus();}};
   }
   if(R==='side'){
-    $.innerHTML=`<div class="side ${s.tabs_on_top?'top':''} ${s.tabs_wide?'wide':''}">`+S.tabs.map(t=>
-      `<div class="tab ${t.id===S.active?'act':''} ${t.paused?'paused':''}" data-id="${t.id}" title="${esc(t.title+' — '+t.url)}" style="border-left:3px solid ${['transparent','#5ad1ff','#4ade80','#fbbf24','#fb7185','#a78bfa'][t.group||0]}">${t.url.startsWith("http")?`<img src="${fav(t.url)}">`:`<div class="logo" style="width:20px;height:20px"></div>`}<span class="t">${t.id===S.split?"◨ ":""}${t.private?"🕶 ":""}${esc(t.title)}</span><span class="x" data-x="${t.id}">✕</span></div>`).join('')+
-      `<div class="tab" id="nt" style="justify-content:center;width:46px">＋</div><div class="tab" id="np" style="justify-content:center;width:46px" title="Privater Tab">🕶</div></div>`;
-    $.querySelectorAll('.tab[data-id]').forEach(e=>e.onclick=ev=>{const x=ev.target.dataset.x; send(x?{t:'close',id:+x}:{t:'switch',id:+e.dataset.id})});
+    $.innerHTML=`<div class="side ${s.tabs_on_top?'top':''} ${s.tabs_wide?'wide':''}" role="tablist" aria-label="Browser-Tabs">`+S.tabs.map(t=>
+      `<div class="tab ${t.id===S.active?'act':''} ${t.paused?'paused':''}" data-id="${t.id}" role="tab" aria-selected="${t.id===S.active}" aria-label="${esc(t.title)}" tabindex="${t.id===S.active?'0':'-1'}" title="${esc(t.title+' — '+t.url)}" style="border-left:2px solid ${['transparent','#70c8bd','#79c6a0','#d5b578','#d98b91','#9da8bd'][t.group||0]}"><span class="tab-mark" aria-hidden="true">${t.private?icon('eye'):t.paused?icon('moon'):t.url.startsWith('http')?esc(siteLetter(t.url)):icon('globe')}</span><span class="t">${t.id===S.split?icon('window'):''}${esc(t.title)}</span><button type="button" class="x" data-x="${t.id}" aria-label="Tab schließen: ${esc(t.title)}" title="Tab schließen">${icon('close','icon')}</button></div>`).join('')+
+      `<button class="tab tab-control" id="nt" aria-label="Neuer Tab" title="Neuer Tab">${icon('plus')}</button><button class="tab tab-control" id="np" aria-label="Privater Tab" title="Privater Tab">${icon('eye')}</button></div>`;
+    $.querySelectorAll('.tab[data-id]').forEach(e=>e.onclick=ev=>{const x=ev.target.closest('[data-x]'); if(x){ev.stopPropagation();send({t:'close',id:+x.dataset.x});}else send({t:'switch',id:+e.dataset.id})});
     $.querySelectorAll('.tab[data-id]').forEach(e=>{ e.onmouseenter=()=>{ const id=+e.dataset.id; if(hoverId===id)return; hoverId=id; const r=e.getBoundingClientRect(); send({t:'hover',id,x:r.left,y:r.top}); }; e.onmouseleave=()=>{ hoverId=0; send({t:'hover_end'}); }; });
     nt.onclick=()=>send({t:'newtab'}); np.onclick=()=>send({t:'newtab',private:true});
   }
   if(R==='onboard'){
     const d=draft, E=['duckduckgo','google','brave'], ck=(k,l)=>`<label class="sw">${l}<input type="checkbox" ${d[k]?'checked':''} data-k="${k}" data-c></label>`;
     const pages=[
-      `<div class="logo" style="width:48px;height:48px"></div><h1>Willkommen bei Liquid Flow</h1><p>Schnell, sauber, privat. Wir richten kurz alles ein.</p>`,
+      `${mark}<h1>Willkommen bei Liquid Flow</h1><p>Schnell, sauber, privat. Wir richten kurz alles ein.</p>`,
       `<h1>Suchmaschine</h1><div class="opts">${E.map(e=>`<button class="btn ${d.search_engine===e?'on':''}" data-k="search_engine" data-v="${e}">${e}</button>`).join('')}</div>`,
       `<h1>Tabs</h1><div class="opts"><button class="btn ${!d.tabs_wide?'on':''}" data-k="tabs_wide" data-v="false">Nur Logo</button><button class="btn ${d.tabs_wide?'on':''}" data-k="tabs_wide" data-v="true">Logo + Name</button></div>
        <div class="opts"><button class="btn ${!d.tabs_on_top?'on':''}" data-k="tabs_on_top" data-v="false">Seitenleiste</button><button class="btn ${d.tabs_on_top?'on':''}" data-k="tabs_on_top" data-v="true">Oben</button></div>
@@ -99,17 +216,17 @@ function view(){
       `<h1>Tor-VPN</h1><label class="sw">VPN aktivieren<input type="checkbox" ${d.vpn_enabled?'checked':''} data-k="vpn_enabled" data-c></label>
        <label class="sw">Kill-Switch<input type="checkbox" ${d.kill_switch?'checked':''} data-k="kill_switch" data-c></label>`,
       `<h1>Werbeblocker</h1><p style="opacity:.7;margin:0">Optional: Domain-Blocklisten per Link, Datei, ZIP oder Ordner.</p>${blSection()}`,
-      `<h1>Schutz</h1><p style="opacity:.7;margin:0">Das gilt für alle Seiten – pro Seite änderst du es später über das 🛡.</p>${ck('ad_block','Werbe- und Tracker-Blocker')}${ck('cookie_banners','Cookie-Banner automatisch ablehnen')}${ck('https_only','Nur HTTPS')}${ck('https_interstitial','Warnseite statt Fehler bei HTTP')}${ck('fingerprint_protect','Anti-Fingerprinting')}${ck('webrtc_protect','WebRTC-Leak-Schutz')}${ck('strip_tracking','Tracking-Parameter entfernen')}${ck('block_popups','Popups blockieren')}${ck('block_autoplay','Autoplay blockieren')}${ck('stats_enabled','Datenschutz-Bericht (Statistik) führen')}${ck('hibp_enabled','Passwort-Check (Have I Been Pwned) erlauben')}`,
+      `<h1>Schutz</h1><p style="opacity:.7;margin:0">Das gilt für alle Seiten – pro Seite änderst du es später über den Seiten-Schutz.</p>${ck('ad_block','Werbe- und Tracker-Blocker')}${ck('cookie_banners','Cookie-Banner automatisch ablehnen')}${ck('https_only','Nur HTTPS')}${ck('https_interstitial','Warnseite statt Fehler bei HTTP')}${ck('fingerprint_protect','Anti-Fingerprinting')}${ck('webrtc_protect','WebRTC-Leak-Schutz')}${ck('strip_tracking','Tracking-Parameter entfernen')}${ck('block_popups','Popups blockieren')}${ck('block_autoplay','Autoplay blockieren')}${ck('stats_enabled','Datenschutz-Bericht (Statistik) führen')}${ck('hibp_enabled','Passwort-Check (Have I Been Pwned) erlauben')}`,
       `<h1>Komfort</h1>${ck('restore_session','Tabs beim Start wiederherstellen')}${ck('hints_enabled','Tasten-Navigation (Taste F zeigt Link-Hinweise)')}${ck('mouse_gestures','Mausgesten (rechte Taste ziehen)')}<p style="opacity:.7;margin:0">Alle Tastenkürzel änderst du in den Einstellungen. Strg+K öffnet die Befehlspalette.</p>`,
       `<h1>Import</h1><p style="opacity:.7;margin:0">Lesezeichen und Verlauf aus deinem alten Browser übernehmen.</p>${importSection()}`,
-      `<h1>Fertig!</h1><p>Alles lässt sich später in den Einstellungen (⚙) ändern.</p>`];
+      `<h1>Fertig!</h1><p>Alles lässt sich später in den Einstellungen ändern.</p>`];
     $.innerHTML=`<div class="ov"><div class="card glass">${pages[step]}<div class="row" style="justify-content:flex-end">
       ${step>0?'<button class="btn" id="b">Zurück</button>':''}<button class="btn on" id="n">${step===pages.length-1?'Starten':'Weiter'}</button></div></div></div>`;
     $.querySelectorAll('[data-k]').forEach(e=>e.onclick=e.onchange=()=>{d[e.dataset.k]=e.dataset.c!==undefined?e.checked:(e.dataset.v==='true'||(e.dataset.v==='false'?false:e.dataset.v)); view()});
     n.onclick=()=>step===pages.length-1?send({t:'onboard_done',s:d}):(step++,view()); if(window.b) b.onclick=()=>(step--,view()); bindBl(); bindImport();
   }
   if(R==='palette'){
-    const cmds=[...S.actions.map(a=>[a.label+(a.combo?'   '+a.combo:''),{t:'action',id:a.id}]),...S.tabs.map(t=>['Tab: '+t.title,{t:'switch',id:t.id}]),...S.bookmarks.map(b=>['★ '+(b.title||b.url),{t:'open_url',url:b.url}]),...S.history.slice(0,30).map(h=>['↺ '+(h.title||h.url),{t:'open_url',url:h.url}])];
+    const cmds=[...S.actions.map(a=>[a.label+(a.combo?'   '+a.combo:''),{t:'action',id:a.id}]),...S.tabs.map(t=>['Tab: '+t.title,{t:'switch',id:t.id}]),...S.bookmarks.map(b=>['Lesezeichen: '+(b.title||b.url),{t:'open_url',url:b.url}]),...S.history.slice(0,30).map(h=>['Verlauf: '+(h.title||h.url),{t:'open_url',url:h.url}])];
     $.innerHTML=`<div class="ov" style="align-items:flex-start;padding-top:12vh"><div class="card glass"><input id="pq" type="text" placeholder="Befehl oder Tab suchen…" style="background:none;border:0;outline:0;font-size:18px"><div id="pl"></div></div></div>`;
     const draw=()=>{const f=pq.value.toLowerCase(); pl.innerHTML=cmds.map((c,i)=>[c,i]).filter(([c])=>c[0].toLowerCase().includes(f)).slice(0,8).map(([c,i])=>`<div class="tab" data-i="${i}">${esc(c[0])}</div>`).join('')};
     const run=i=>{send({t:'close_overlay'}); send(cmds[i][1]);};
@@ -120,19 +237,19 @@ function view(){
   }
   if(R==='shield'){
     const x=S.site, tg=(k,l)=>`<label class="sw">${l}<input type="checkbox" ${x[k]?'checked':''} data-sk="${k}"></label>`;
-    $.innerHTML=`<div class="ov" style="align-items:flex-start;justify-content:flex-end;padding:100px 20px;background:rgba(0,0,0,.35)"><div class="card glass" style="width:340px;background:#121a30"><h3 style="margin:0">🛡 ${esc(x.host||'Keine Seite')}</h3>${x.host?tg('adblock','Werbeblocker')+tg('fingerprint','Anti-Fingerprinting')+tg('webrtc','WebRTC-Schutz')+tg('https_only','Nur HTTPS')+tg('strip_tracking','Tracking-Parameter')+tg('dark','Dark-Mode')+tg('cookies','Cookie-Banner blocken')+tg('hints','Tasten-Navigation')+tg('block_cam','Kamera blockieren')+tg('block_mic','Mikrofon blockieren')+tg('block_geo','Standort blockieren')+`<label class="sw">Zoom<input type="range" min=".5" max="2" step=".1" value="${x.zoom}" data-sz></label>`:''}<button class="btn" id="tn">Neue Tor-Identität</button></div></div>`;
+    $.innerHTML=`<div class="ov shield-ov"><div class="card glass shield-card"><div class="row"><span class="tab-mark">${icon(x.host?'lock':'globe')}</span><h1 style="flex:1">${esc(x.host||'Keine Seite')}</h1><button class="btn ic" id="sx" aria-label="Schließen">${icon('close')}</button></div>${x.host?tg('adblock','Werbeblocker')+tg('fingerprint','Anti-Fingerprinting')+tg('webrtc','WebRTC-Schutz')+tg('https_only','Nur HTTPS')+tg('strip_tracking','Tracking-Parameter')+tg('dark','Dark-Mode')+tg('cookies','Cookie-Banner blocken')+tg('hints','Tasten-Navigation')+tg('block_cam','Kamera blockieren')+tg('block_mic','Mikrofon blockieren')+tg('block_geo','Standort blockieren')+`<label class="sw">Zoom<input type="range" min=".5" max="2" step=".1" value="${x.zoom}" data-sz></label>`:'<p class="muted">Öffne eine Webseite, um deren Schutzoptionen anzupassen.</p>'}<button class="btn" id="tn">Neue Tor-Identität</button></div></div>`;
     $.querySelectorAll('[data-sk]').forEach(e=>e.onchange=()=>send({t:'site',host:x.host,k:e.dataset.sk,v:e.checked}));
     const z=$.querySelector('[data-sz]'); if(z) z.onchange=()=>send({t:'site',host:x.host,k:'zoom',v:+z.value});
-    tn.onclick=()=>send({t:'tor_new'});
+    tn.onclick=()=>send({t:'tor_new'}); sx.onclick=()=>send({t:'close_overlay'});
     $.querySelector('.ov').onclick=e=>{if(e.target.classList.contains('ov'))send({t:'close_overlay'})};
   }
   if(R==='preview'){ const p=S.x.preview||{};
-    $.innerHTML=`<div style="padding:8px;background:#101830;height:100%;box-sizing:border-box;border:1px solid var(--l);border-radius:12px;overflow:hidden">${p.thumb?`<img src="${p.thumb}" style="width:100%;border-radius:8px;display:block">`:''}<div style="margin-top:6px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.title||'')}</div><small style="opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${esc(p.url||'')}</small></div>`; }
+    $.innerHTML=`<div class="preview-card">${p.thumb?`<img src="${p.thumb}" alt="" style="width:100%;border-radius:4px;display:block">`:''}<div style="margin-top:6px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.title||'')}</div><small style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${esc(p.url||'')}</small></div>`; }
   if(R==='workspaces'){
     const act=S.settings.active_workspace;
-    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Arbeitsbereiche</h1><button class="btn" id="c">✕</button></div>
+    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Arbeitsbereiche</h1><button class="btn ic" id="c" aria-label="Schließen">${icon('close')}</button></div>
     <p style="opacity:.7;margin:0">Speichere die aktuellen Tabs und Gruppen als Set (z. B. „Uni“, „Server“, „Privat“) und wechsle jederzeit dorthin.</p>
-    ${S.x.workspaces.map(w=>`<div class="row"><span style="flex:1"><b>${esc(w.name)}</b>${w.name===act?' <small style="color:var(--ac)">aktiv</small>':''}<br><small style="opacity:.6">${w.tabs} Tabs</small></span><button class="btn" data-wo="${esc(w.name)}">Öffnen</button><button class="btn" data-wd="${esc(w.name)}">✕</button></div>`).join('')||'<p style="opacity:.6">Noch keine Arbeitsbereiche.</p>'}
+    ${S.x.workspaces.map(w=>`<div class="row"><span style="flex:1"><b>${esc(w.name)}</b>${w.name===act?' <small style="color:var(--accent)">aktiv</small>':''}<br><small style="opacity:.6">${w.tabs} Tabs</small></span><button class="btn" data-wo="${esc(w.name)}">Öffnen</button><button class="btn ic" data-wd="${esc(w.name)}" aria-label="Arbeitsbereich löschen: ${esc(w.name)}">${icon('close')}</button></div>`).join('')||'<p style="opacity:.6">Noch keine Arbeitsbereiche.</p>'}
     <div class="row"><input id="wn" type="text" placeholder="Name, z. B. Uni" style="flex:1;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:8px 12px;color:inherit;outline:0"><button class="btn on" id="ws">Aktuelle Tabs speichern</button></div></div></div>`;
     $.querySelectorAll('[data-wo]').forEach(e=>e.onclick=()=>send({t:'ws_open',name:e.dataset.wo}));
     $.querySelectorAll('[data-wd]').forEach(e=>e.onclick=()=>send({t:'ws_delete',name:e.dataset.wd}));
@@ -140,9 +257,9 @@ function view(){
   }
   if(R==='privacy'){
     const P=S.x.privacy||{week:[],top:[],page:[],total:0}, mx=Math.max(1,...P.week.map(w=>w.n));
-    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Datenschutz-Bericht</h1><button class="btn" id="c">✕</button></div>
+    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Datenschutz-Bericht</h1><button class="btn ic" id="c" aria-label="Schließen">${icon('close')}</button></div>
     <div style="font-size:34px;font-weight:300">${P.total.toLocaleString()} <small style="font-size:14px;opacity:.7">geblockt in den letzten 7 Tagen</small></div>
-    <div class="row" style="align-items:flex-end;height:90px;gap:6px">${P.week.map(w=>`<div style="flex:1;text-align:center"><div title="${w.n}" style="height:${Math.round(w.n/mx*64)+2}px;background:linear-gradient(180deg,#5ad1ff,#7b6bff);border-radius:6px 6px 2px 2px"></div><small style="opacity:.6">${new Date(w.day*864e5).toLocaleDateString([],{weekday:'short'})}</small></div>`).join('')}</div>
+    <div class="row" style="align-items:flex-end;height:90px;gap:6px">${P.week.map(w=>`<div style="flex:1;text-align:center"><div title="${w.n}" style="height:${Math.round(w.n/mx*64)+2}px;background:#70c8bd;border-radius:3px 3px 1px 1px"></div><small style="opacity:.6">${new Date(w.day*864e5).toLocaleDateString([],{weekday:'short'})}</small></div>`).join('')}</div>
     <h3 style="margin:6px 0 0">Auf dieser Seite geblockt</h3>${P.page.map(x=>`<div class="row"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(x.d)}</span><b>${x.n}</b></div>`).join('')||'<p style="opacity:.6;margin:0">Nichts geblockt (oder noch nichts geladen).</p>'}
     <h3 style="margin:6px 0 0">Häufigste Tracker</h3>${P.top.map(x=>`<div class="row"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(x.d)}</span><b>${x.n}</b></div>`).join('')||'<p style="opacity:.6;margin:0">Noch keine Daten.</p>'}
     ${P.on?'':'<small style="opacity:.6">Die Statistik ist in den Einstellungen ausgeschaltet.</small>'}</div></div>`;
@@ -150,22 +267,22 @@ function view(){
   }
   if(R==='qr'){
     const q=S.x.qr||{svg:'',url:''};
-    $.innerHTML=`<div class="ov"><div class="card glass" style="align-items:center;text-align:center"><div class="row" style="width:100%"><h1 style="flex:1;text-align:left">Seite ans Handy</h1><button class="btn" id="c">✕</button></div>
+    $.innerHTML=`<div class="ov"><div class="card glass" style="align-items:center;text-align:center"><div class="row" style="width:100%"><h1 style="flex:1;text-align:left">Seite ans Handy</h1><button class="btn ic" id="c" aria-label="Schließen">${icon('close')}</button></div>
     <div style="background:#fff;border-radius:14px;padding:6px;width:260px;height:260px">${q.svg}</div><small style="opacity:.7;word-break:break-all">${esc(q.url)}</small>
     <p style="opacity:.7;margin:0">Kamera-App öffnen und den Code scannen. Oder den Link in deinen Sync-Ordner legen (als Klartext-Liste).</p>
     <button class="btn" id="qs">In Sync-Ordner ablegen</button></div></div>`;
     qs.onclick=()=>send({t:'qr_save'}); c.onclick=()=>send({t:'close_overlay'});
   }
   if(R==='import'){
-    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Import</h1><button class="btn" id="c">✕</button></div><p style="opacity:.7;margin:0">Lesezeichen und Verlauf aus anderen Browsern übernehmen.</p>${importSection()}</div></div>`;
+    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Import</h1><button class="btn ic" id="c" aria-label="Schließen">${icon('close')}</button></div><p style="opacity:.7;margin:0">Lesezeichen und Verlauf aus anderen Browsern übernehmen.</p>${importSection()}</div></div>`;
     c.onclick=()=>send({t:'close_overlay'}); bindImport();
   }
   if(R==='suggest'){
-    $.innerHTML='<div style="padding:4px">'+(S.x.suggest||[]).map(x=>`<div class="tab" data-u="${esc(x.u)}"><span class="t" style="display:block"><b>${x.k} ${esc(x.t||x.u)}</b><br><small style="opacity:.6">${esc(x.u)}</small></span></div>`).join('')+'</div>';
+    $.innerHTML='<div class="suggest-list">'+(S.x.suggest||[]).map(x=>`<button type="button" class="tab" data-u="${esc(x.u)}"><span class="tab-mark">${icon(x.k==='★'?'bookmark':'history')}</span><span class="t" style="display:block"><b>${esc(x.t||x.u)}</b><br><small>${esc(x.u)}</small></span></button>`).join('')+'</div>';
     $.querySelectorAll('[data-u]').forEach(e=>e.onclick=()=>{send({t:'suggest_close'});send({t:'open_url',url:e.dataset.u});});
   }
   if(R==='tools'){
-    $.innerHTML=`<div style="padding:12px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;background:#101830"><div class="row"><h3 style="flex:1;margin:0">Werkzeuge</h3><button class="btn ic" id="tx">✕</button></div><b>Notizen</b><textarea id="nt" style="flex:1;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:10px;color:inherit;outline:0;resize:none">${esc(S.x.notes||'')}</textarea><b>Rechner</b><input id="ci" type="text" placeholder="z. B. 12*(3+4)" style="background:var(--g);border:1px solid var(--l);border-radius:10px;padding:8px 12px;color:inherit;outline:0"><div id="co" style="font-size:22px"></div></div>`;
+    $.innerHTML=`<div class="tools-panel"><div class="row"><h3 style="flex:1;margin:0">Werkzeuge</h3><button class="btn ic" id="tx" aria-label="Schließen">${icon('close')}</button></div><b>Notizen</b><textarea id="nt" aria-label="Notizen">${esc(S.x.notes||'')}</textarea><b>Rechner</b><input id="ci" type="text" placeholder="z. B. 12*(3+4)" aria-label="Rechner"><div id="co" style="font-size:20px"></div></div>`;
     nt.oninput=()=>send({t:'notes_save',v:nt.value});
     ci.oninput=()=>{ try{ const v=ci.value.trim(); if(v&&/^[0-9+\-*\/().,%\s^]*$/.test(v)){ co.textContent='= '+Function('"use strict";return ('+v.replace(/,/g,'.').replace(/\^/g,'**')+')')(); } else co.textContent=''; }catch(e){co.textContent='';} };
     tx.onclick=()=>send({t:'close_overlay'});
@@ -177,7 +294,7 @@ function view(){
       await pc.setLocalDescription(await pc.createOffer());
       setTimeout(()=>{ window.rtcText='WebRTC: '+(ips.size?('sichtbare IPs: '+[...ips].join(', ')):'keine IP sichtbar (geschützt)'); const e=document.getElementById('rtc'); if(e)e.textContent=window.rtcText; pc.close(); },2500);
     }catch(e){ window.rtcText='WebRTC: nicht verfügbar'; } })(); }
-    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Leak-Test</h1><button class="btn" id="c">✕</button></div>
+    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Leak-Test</h1><button class="btn ic" id="c" aria-label="Schließen">${icon('close')}</button></div>
     <p style="opacity:.7;margin:0">Fragt api.ipify.org ab – einmal direkt, einmal über den Browser-Weg.</p>
     <button class="btn on" id="lr">${L.busy?'Teste…':'Test starten'}</button>
     ${L.verdict?`<h3 style="margin:0">${esc(L.verdict)}</h3><div>Echte IP: <b>${esc(L.direct||'?')}</b></div><div>Browser-IP: <b>${esc(L.browser||'?')}</b></div><div>VPN: ${L.vpn?'an':'aus'} (${esc(L.tor)}) · DNS: ${esc(L.dns)}</div>`:''}
@@ -185,20 +302,20 @@ function view(){
     lr.onclick=()=>send({t:'leak_run'}); c.onclick=()=>send({t:'close_overlay'});
   }
   if(R==='profiles'){
-    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Profile</h1><button class="btn" id="c">✕</button></div><p style="opacity:.7;margin:0">Aktuell: <b>${esc(S.x.profile)}</b>. Jedes Profil hat eigene Cookies, Verlauf, Lesezeichen, Tresor und Einstellungen und öffnet in einem eigenen Fenster.</p>
+    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Profile</h1><button class="btn ic" id="c" aria-label="Schließen">${icon('close')}</button></div><p style="opacity:.7;margin:0">Aktuell: <b>${esc(S.x.profile)}</b>. Jedes Profil hat eigene Cookies, Verlauf, Lesezeichen, Tresor und Einstellungen und öffnet in einem eigenen Fenster.</p>
     ${S.x.profiles.map(p=>`<div class="row"><span style="flex:1">${esc(p)}</span><button class="btn" data-po="${esc(p)}">Öffnen</button></div>`).join('')}
     <div class="row"><input id="pn" type="text" placeholder="Neues Profil (z. B. arbeit)" style="flex:1;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:8px 12px;color:inherit;outline:0"><button class="btn on" id="pc">Erstellen</button></div></div></div>`;
     $.querySelectorAll('[data-po]').forEach(e=>e.onclick=()=>send({t:'profile_open',name:e.dataset.po}));
     pc.onclick=()=>{ if(pn.value.trim()) send({t:'profile_open',name:pn.value.trim()}); }; c.onclick=()=>send({t:'close_overlay'});
   }
   if(R==='vault'){
-    const v=S.vault, fld='background:var(--g);border:1px solid var(--l);border-radius:10px;padding:8px 12px;outline:0;color:inherit';
+    const v=S.vault, fld='background:var(--raised);border:1px solid var(--line);border-radius:5px;padding:8px 10px;outline:0;color:inherit';
     if(!v.unlocked){
-      $.innerHTML=`<div class="ov"><div class="card glass"><h1>Passwort-Tresor</h1><p style="opacity:.7;margin:0">${v.exists?'Master-Passwort eingeben.':'Neuen Tresor erstellen: starkes Master-Passwort wählen (min. 8 Zeichen). Es kann nicht wiederhergestellt werden.'}</p><input id="mp" type="password" style="${fld}"><div style="color:#fb7185">${esc(v.error||'')}</div><div class="row" style="justify-content:flex-end"><button class="btn" id="vx">Abbrechen</button><button class="btn on" id="vu">${v.exists?'Entsperren':'Erstellen'}</button></div></div></div>`;
+      $.innerHTML=`<div class="ov"><div class="card glass" role="dialog" aria-modal="true" aria-labelledby="vault-title"><h1 id="vault-title">Passwort-Tresor</h1><p style="opacity:.7;margin:0">${v.exists?'Master-Passwort eingeben.':'Neuen Tresor erstellen: starkes Master-Passwort wählen (min. 8 Zeichen). Es kann nicht wiederhergestellt werden.'}</p><input id="mp" type="password" aria-label="Master-Passwort" style="${fld}"><div style="color:var(--bad)">${esc(v.error||'')}</div><div class="row" style="justify-content:flex-end"><button class="btn" id="vx">Abbrechen</button><button class="btn on" id="vu">${v.exists?'Entsperren':'Erstellen'}</button></div></div></div>`;
       mp.focus(); const go=()=>send({t:'vault_unlock',p:mp.value}); vu.onclick=go; mp.onkeydown=e=>{if(e.key==='Enter')go()}; vx.onclick=()=>send({t:'close_overlay'});
     } else {
-      $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Tresor</h1><button class="btn" id="vl">Sperren</button><button class="btn" id="vc">✕</button></div>
-      ${v.entries.map(e=>`<div class="row"><span style="flex:1"><b>${esc(e.host)}</b><br><small style="opacity:.6">${esc(e.user)}</small></span>${e.pwned?`<span class="pill" style="background:#8a2a2a" title="In Datenlecks gefunden">⚠ ${e.pwned}×</span>`:''}${e.dup?'<span class="pill" style="background:#8a6d1a">doppelt</span>':''}${e.weak?'<span class="pill" style="background:#8a6d1a">schwach</span>':''}${e.code?`<span class="pill" data-cp="${e.code}" style="cursor:pointer" title="Klicken zum Kopieren">🔑 ${e.code} <small data-rem="${e.rem}">${e.rem}s</small></span>`:''}<button class="btn" data-vf="${e.id}">Ausfüllen</button><button class="btn" data-vd="${e.id}">✕</button></div>`).join('')||'<p style="opacity:.6">Noch keine Logins. Auf einer Login-Seite Strg+K → „Login speichern“.</p>'}
+      $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Tresor</h1><button class="btn" id="vl">Sperren</button><button class="btn ic" id="vc" aria-label="Schließen">${icon('close')}</button></div>
+      ${v.entries.map(e=>`<div class="row vault-entry"><span style="flex:1;min-width:100px"><b>${esc(e.host)}</b><br><small>${esc(e.user)}</small></span>${e.pwned?`<span class="pill vault-alert" title="In Datenlecks gefunden">${icon('shieldAlert')}${e.pwned} Mal</span>`:''}${e.dup?'<span class="pill vault-warn">doppelt</span>':''}${e.weak?'<span class="pill vault-warn">schwach</span>':''}${e.code?`<button type="button" class="pill" data-cp="${esc(e.code)}" title="Code kopieren">${icon('key')}${esc(e.code)} <small data-rem="${e.rem}">${e.rem}s</small></button>`:''}<button class="btn" data-vf="${esc(e.id)}">Ausfüllen</button><button class="btn ic" data-vd="${esc(e.id)}" aria-label="Eintrag entfernen" title="Eintrag entfernen">${icon('close')}</button></div>`).join('')||'<p style="opacity:.6">Noch keine Logins. Auf einer Login-Seite Strg+K → „Login speichern“.</p>'}
       <h3 style="margin:6px 0 0">Login hinzufügen</h3><input id="vh" type="text" placeholder="Seite (z. B. github.com)" style="${fld}"><input id="vn" type="text" placeholder="Benutzername" style="${fld}"><input id="vp" type="text" placeholder="Passwort" style="${fld}"><input id="vtt" type="text" placeholder="2FA-Secret oder otpauth://-Link (optional)" style="${fld}">
       <div class="row"><button class="btn" id="vg">Passwort generieren</button>${S.settings.hibp_enabled?'<button class="btn" id="vchk">Passwörter prüfen</button>':''}<button class="btn on" id="va">Speichern</button></div></div></div>`;
       const gen=()=>{const c='abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*-_',a=new Uint32Array(20);crypto.getRandomValues(a);return [...a].map(x=>c[x%c.length]).join('');};
@@ -209,86 +326,47 @@ function view(){
     }
   }
   if(R==='find'){
-    $.innerHTML=`<div style="padding:8px"><div class="glass row" style="padding:0 10px;height:46px;background:#121a30"><input id="fq" type="text" placeholder="Auf Seite suchen…" style="flex:1;background:none;border:0;outline:0"><button class="btn ic" id="fp">↑</button><button class="btn ic" id="fnx">↓</button><button class="btn ic" id="fx">✕</button></div></div>`;
+    $.innerHTML=`<div class="find-panel"><div class="glass row"><input id="fq" type="text" placeholder="Auf Seite suchen…" aria-label="Auf Seite suchen"><button class="btn ic" id="fp" aria-label="Vorheriges Ergebnis" title="Vorheriges Ergebnis">${icon('back')}</button><button class="btn ic" id="fnx" aria-label="Nächstes Ergebnis" title="Nächstes Ergebnis">${icon('forward')}</button><button class="btn ic" id="fx" aria-label="Schließen">${icon('close')}</button></div></div>`;
     fq.focus(); fq.oninput=()=>send({t:'find',q:fq.value,back:false});
     fq.onkeydown=e=>{if(e.key==='Enter')send({t:'find',q:fq.value,back:e.shiftKey})};
     fp.onclick=()=>send({t:'find',q:fq.value,back:true}); fnx.onclick=()=>send({t:'find',q:fq.value,back:false}); fx.onclick=()=>send({t:'close_overlay'});
   }
   if(['history','bookmarks','downloads'].includes(R)){
     const T={history:'Verlauf',bookmarks:'Lesezeichen',downloads:'Downloads'}[R];
-    const rows=R==='history'?S.history.map(h=>({a:h.title||h.url,b:h.url,u:h.url})):R==='bookmarks'?S.bookmarks.map(b=>({a:b.title||b.url,b:b.url,u:b.url,x:1})):S.downloads.slice().reverse().map(d=>({a:d.name,b:(d.done?(d.ok?'fertig':'fehlgeschlagen'):'läuft…')+(d.vt?' · '+d.vt:''),p:d.path}));
-    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">${T}</h1>${R==='history'?'<button class="btn" id="hc">Verlauf löschen</button>':''}<button class="btn" id="c">✕</button></div><input id="lq" type="text" placeholder="Suchen…" style="background:var(--g);border:1px solid var(--l);border-radius:10px;padding:8px 12px;outline:0"><div id="ll"></div></div></div>`;
-    const draw=()=>{const f=lq.value.toLowerCase(); ll.innerHTML=rows.filter(r=>(r.a+r.b).toLowerCase().includes(f)).slice(0,200).map((r,i)=>`<div class="tab" data-r="${rows.indexOf(r)}"><span class="t" style="display:block"><b>${esc(r.a)}</b><br><small style="opacity:.6">${esc(r.b)}</small></span>${r.x?'<span class="x" data-x="1" style="display:inline">✕</span>':''}</div>`).join('')||'<p style="opacity:.6">Nichts vorhanden.</p>'};
+    const rows=R==='history'?S.history.map(h=>({a:h.title||h.url,b:h.url,u:h.url,t:h.t})):R==='bookmarks'?S.bookmarks.map(b=>({a:b.title||b.url,b:b.url,u:b.url,x:1})):S.downloads.slice().reverse().map(d=>({a:d.name,b:(d.done?(d.ok?'fertig':'fehlgeschlagen'):'läuft…')+(d.vt?' · '+d.vt:''),p:d.path}));
+    $.innerHTML=`<div class="ov"><div class="card glass library-panel"><div class="row"><h1 style="flex:1">${T}</h1>${R==='history'?'<button class="btn" id="hc">Verlauf löschen</button>':''}<button class="btn ic" id="c" aria-label="Schließen">${icon('close')}</button></div><input id="lq" type="search" placeholder="${R==='downloads'?'Downloads durchsuchen':R==='history'?'Verlauf durchsuchen':'Lesezeichen durchsuchen'}" aria-label="${T} durchsuchen"><div id="ll"></div></div></div>`;
+    const draw=()=>{const f=lq.value.toLowerCase(),visible=rows.filter(r=>(r.a+r.b).toLowerCase().includes(f)).slice(0,200);let day='';ll.innerHTML=visible.map(r=>{const heading=R==='history'?new Date((r.t||0)*1000).toLocaleDateString([], {weekday:'long',year:'numeric',month:'long',day:'numeric'}):'';const label=heading&&heading!==day?(day=heading,`<h2 class="history-date">${esc(heading)}</h2>`):'';return `${label}<div class="tab library-row" data-r="${rows.indexOf(r)}" tabindex="0" role="button"><span class="tab-mark">${icon(R==='history'?'history':R==='bookmarks'?'bookmark':'download')}</span><span class="t" style="display:block"><b>${esc(r.a)}</b><br><small>${esc(r.b)}</small></span>${r.x?`<button type="button" class="x" data-x="1" aria-label="Lesezeichen entfernen">${icon('close')}</button>`:''}</div>`}).join('')||'<p class="muted">Nichts vorhanden.</p>'};
     lq.oninput=draw; draw();
     ll.onclick=e=>{const d=e.target.closest('[data-r]'); if(!d)return; const r=rows[+d.dataset.r];
-      if(e.target.dataset.x){send({t:'bm_remove',url:r.u});return;}
+      if(e.target.closest('[data-x]')){send({t:'bm_remove',url:r.u});return;}
       if(R==='downloads'){send({t:'dl_show',path:r.p});return;}
       send({t:'close_overlay'}); send({t:'open_url',url:r.u});};
+    ll.onkeydown=e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('[data-x]')){const row=e.target.closest('[data-r]');if(row){e.preventDefault();row.click();}}};
     c.onclick=()=>send({t:'close_overlay'}); if(window.hc) hc.onclick=()=>send({t:'hist_clear'});
   }
   if(R==='settings'){
     const C=['de','at','ch','nl','fr','se','us','gb'], sw=(k,l)=>`<label class="sw">${l}<input type="checkbox" ${s[k]?'checked':''} data-k="${k}"></label>`;
-    $.innerHTML=`<div class="ov"><div class="card glass"><h1>Einstellungen</h1>
-    <label class="sw">Suchmaschine<select data-s="search_engine">${['duckduckgo','google','brave'].map(e=>`<option ${s.search_engine===e?'selected':''}>${e}</option>`).join('')}</select></label>
-    ${sw('tabs_wide','Tabs mit Namen')}${sw('tabs_on_top','Tab-Leiste oben')}${sw('suspend_background_tabs','Hintergrund-Tabs pausieren')}
-    <label class="sw">Lautstärke<input type="range" min="0" max="1" step=".05" value="${s.volume}" data-r="volume"></label>
-    ${sw('vpn_enabled','Tor-VPN')}${sw('kill_switch','Kill-Switch')}
-    <label class="sw">Exit-Land<select data-s="vpn_exit_country">${C.map(c=>`<option ${s.vpn_exit_country===c?'selected':''}>${c}</option>`).join('')}</select></label>
-    <h3 style="margin:6px 0 0">Erweiterungen (Chrome-Adapter)</h3>
-    <div class="row"><input id="exi" type="text" placeholder="Web-Store-Link oder Erweiterungs-ID" style="flex:1;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"><button class="btn" id="exb">Installieren</button></div>
-    <div class="row"><button class="btn" id="exf">.crx / .zip…</button><button class="btn" id="exd">Ordner…</button></div>
-    ${(S.exts||[]).map(x=>`<div class="row"><input type="checkbox" ${x.on?'checked':''} data-et="${x.id}"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.name)}</span><button class="btn" data-er="${x.id}">✕</button></div>`).join('')}
-    <h3 style="margin:6px 0 0">Sync (Ordner, Ende-zu-Ende verschlüsselt)</h3>
-    <div class="row"><button class="btn" id="sp">Sync-Ordner wählen…</button><button class="btn" data-a="sync_now">Jetzt synchronisieren</button></div>
-    <small style="opacity:.6">${esc(s.sync_folder||'Kein Ordner gewählt')} · braucht entsperrten Tresor</small>
-    <h3 style="margin:6px 0 0">Updates</h3>
-    <label class="sw">GitHub-Repo (owner/name)<input type="text" value="${esc(s.update_repo)}" data-s="update_repo" style="width:200px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
-    <button class="btn" id="uc">Nach Updates suchen</button>
-    ${sw('block_third_party_cookies','Drittanbieter-Cookies blockieren (experimentell, Neustart nötig)')}
-    <h3 style="margin:6px 0 0">Arbeit &amp; Import</h3>
-    <div class="row"><button class="btn" data-a="workspaces">Arbeitsbereiche</button><button class="btn" data-a="import">Import aus anderem Browser</button><button class="btn" data-a="gaming_toggle">Gaming-Modus</button></div>
-    <h3 style="margin:6px 0 0">Navigation &amp; Medien</h3>
-    ${sw('hints_enabled','Tasten-Navigation (Hinweise für Links)')}
-    <label class="sw">Hinweis-Taste (Umschalt = neuer Tab)<input type="text" maxlength="1" value="${esc(s.hint_key)}" data-s="hint_key" style="width:50px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
-    <label class="sw">Hinweis-Buchstaben<input type="text" value="${esc(s.hint_chars)}" data-s="hint_chars" style="width:160px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
-    <small style="opacity:.6">Video: Bild-im-Bild und Tempo über die Tastenkürzel unten einstellbar.</small>
-    <h3 style="margin:6px 0 0">Vorlesen</h3>
-    <label class="sw">Windows-Stimme (leer = Standard)<input type="text" value="${esc(s.tts_voice)}" data-s="tts_voice" style="width:200px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
-    <label class="sw">Tempo (−10 … 10)<input type="range" min="-10" max="10" step="1" value="${s.tts_rate}" data-r="tts_rate"></label>
-    <label class="sw">Eigenes TTS-Kommando (liest den Text von stdin)<input type="text" value="${esc(s.tts_cmd)}" data-s="tts_cmd" style="width:200px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
-    <button class="btn" id="ttsv">Verfügbare Stimmen anzeigen</button>
-    <h3 style="margin:6px 0 0">Datenschutz-Bericht &amp; Sicherheit</h3>
-    ${sw('stats_enabled','Statistik über geblockte Anfragen speichern')}<button class="btn" data-a="privacy">Bericht öffnen</button>
-    ${sw('https_interstitial','Warnseite bei Seiten ohne HTTPS')}${sw('hibp_enabled','Passwort-Check (Have I Been Pwned) erlauben')}${sw('vt_enabled','Downloads mit VirusTotal prüfen')}
-    <label class="sw">VirusTotal-API-Schlüssel<input type="text" value="${esc(s.vt_key)}" data-s="vt_key" style="width:200px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
-    <small style="opacity:.6">Es wird nur der Datei-Hash gesendet, nicht die Datei. Der Schlüssel liegt lokal in deinem Profil.</small>
-    <h3 style="margin:6px 0 0">Browser</h3>
-    ${sw('restore_session','Sitzung beim Start wiederherstellen')}${sw('block_popups','Popups blockieren')}${sw('block_autoplay','Autoplay blockieren (Neustart nötig)')}${sw('cookie_banners','Cookie-Banner automatisch ablehnen/ausblenden')}${sw('mouse_gestures','Mausgesten (rechte Taste ziehen: ← zurück, → vor, ↓ neuer Tab, ↑ neu laden)')}
-    <h3 style="margin:6px 0 0">Tor</h3>
-    ${sw('tor_per_tab','Eigener Tor-Kreis pro Tab')}
-    <label class="sw" style="align-items:flex-start">Bridges<textarea data-s="bridges" rows="3" placeholder="Eine Bridge pro Zeile, z. B. obfs4 … oder snowflake … (von bridges.torproject.org)" style="width:260px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit">${esc(s.bridges||'')}</textarea></label>
-    <small style="opacity:.6">Bridges und .onion: VPN einmal aus- und einschalten, damit Tor neu startet.</small>
-    <h3 style="margin:6px 0 0">Aussehen</h3>
-    ${sel('theme',[['liquid','Liquid'],['ocean','Ocean'],['aurora','Aurora'],['sunset','Sunset'],['graphite','Graphite']],s.theme)}
-    <div class="row"><button class="btn" id="bgp">Startseiten-Hintergrund…</button><button class="btn" id="bgc">Entfernen</button></div>
-    <label class="sw">Wetter-Stadt (Startseite, optional)<input type="text" value="${esc(s.weather_city||'')}" data-s="weather_city" style="width:160px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
-    <div class="row">${['#5ad1ff','#7b6bff','#4ade80','#fb7185','#fbbf24'].map(c=>`<span data-ac="${c}" style="width:26px;height:26px;border-radius:50%;background:${c};cursor:pointer;border:2px solid ${s.accent===c?'#fff':'transparent'}"></span>`).join('')}</div>
-    <h3 style="margin:6px 0 0">Tastenkürzel</h3>
-    ${S.actions.map(a=>`<div class="row"><span style="flex:1">${esc(a.label)}</span><button class="btn" data-ka="${a.id}">${capturing===a.id?'Taste drücken…':esc(a.combo||'—')}</button></div>`).join('')}
-    <button class="btn" id="kr">Tastenkürzel zurücksetzen</button>
-    <h3 style="margin:6px 0 0">Daten</h3>
-    ${sw('clear_on_exit','Beim Beenden alles löschen (Verlauf, Cookies, Cache)')}
-    <button class="btn" id="cd">Jetzt Browserdaten löschen</button>
-    <h3 style="margin:6px 0 0">Schutz (Standard für alle Seiten)</h3>
-    ${sw('ad_block','Werbeblocker')}${sw('fingerprint_protect','Anti-Fingerprinting')}${sw('webrtc_protect','WebRTC-Leak-Schutz')}${sw('https_only','Nur HTTPS')}${sw('strip_tracking','Tracking-Parameter entfernen')}
-    <p style="margin:0;opacity:.6;font-size:12px">Pro Seite änderbar über das 🛡 in der Leiste oder Strg+K.</p>
-    <h3 style="margin:6px 0 0">DNS</h3>
-    <label class="sw">DNS-Server${sel('dns_mode',[['system','System'],['quad9','Quad9 (DoH)'],['cloudflare','Cloudflare (DoH)'],['google','Google (DoH)'],['custom','Eigene IP']],s.dns_mode)}</label>
-    <label class="sw">Eigene DNS-IP<input type="text" value="${esc(s.dns_custom)}" data-s="dns_custom" style="background:var(--g);border:1px solid var(--l);border-radius:10px;padding:4px 8px;width:150px"></label>
-    <h3 style="margin:6px 0 0">Werbeblocker</h3>${blSection()}
-    <label class="sw">Listen aktualisieren${sel('bl_update',[['startup','Beim Browserstart'],['on_open','Beim Öffnen einer Seite'],['interval','In Intervallen'],['monthly','Monatlich'],['manual','Nur manuell']],s.bl_update)}</label>
-    <label class="sw">Intervall (Stunden)<input type="number" min="1" value="${s.bl_interval_hours}" data-r="bl_interval_hours" style="background:var(--g);border:1px solid var(--l);border-radius:10px;padding:4px 8px;width:80px"></label>
-    <button class="btn on" id="c">Schließen</button></div></div>`;
+    const category=(id,title,body)=>`<section class="settings-section" data-page="${id}" ${settingsPage===id?'':'hidden'}><h2>${title}</h2>${body}</section>`;
+    const tabs=`${sw('tabs_wide','Zeige Tab-Namen')}${sw('tabs_on_top','Tabs oben statt in der Seitenleiste')}${sw('suspend_background_tabs','Inaktive Tabs automatisch pausieren')}${sw('restore_session','Vorherige Tabs beim Start wiederherstellen')}`;
+    const extensionRows=(S.exts||[]).map(x=>`<div class="row ext-row"><input type="checkbox" ${x.on?'checked':''} data-et="${esc(x.id)}" aria-label="${x.on?'Deaktivieren':'Aktivieren'}: ${esc(x.name)}"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.name)}</span><button class="btn ic" data-er="${esc(x.id)}" aria-label="Erweiterung entfernen: ${esc(x.name)}" title="Entfernen">${icon('close')}</button></div>`).join('')||'<p class="muted">Noch keine Erweiterungen installiert.</p>';
+    const accents=['#70c8bd','#86b7ad','#8bb1c4','#9bb9a1','#b5b6a0'];
+    const pages=[
+      ['general','Allgemein','settings',`<header class="settings-intro" data-page="general"><h1>Allgemein</h1><p class="intro">Grundlegende Browser- und Sitzungsoptionen.</p></header>${category('general','Suche',`<label class="sw">Suchmaschine<select data-s="search_engine">${['duckduckgo','google','brave'].map(e=>`<option value="${e}" ${s.search_engine===e?'selected':''}>${e}</option>`).join('')}</select></label>`)}${category('general','Tabs &amp; Start',tabs)}${category('general','Leistung &amp; Lautstärke',`<label class="sw">Medien-Lautstärke<input type="range" min="0" max="1" step=".05" value="${s.volume}" data-r="volume"></label>`)}${category('general','Updates',`<label class="sw">GitHub-Repository<input type="text" value="${esc(s.update_repo)}" data-s="update_repo" aria-label="Update-Repository im Format owner/name"></label><p class="muted">Repository im Format owner/name. Updates werden über das vorhandene Release-System gesucht.</p><button class="btn" id="uc">${icon('refresh')} Nach Updates suchen</button>`)}`],
+      ['appearance','Darstellung','palette',`<header class="settings-intro" data-page="appearance"><h1>Darstellung</h1><p class="intro">Passe die Startseite und Browser-Akzentfarbe an.</p></header>${category('appearance','Farbschema',`${sel('theme',[['liquid','Liquid Flow'],['ocean','Ocean'],['aurora','Aurora'],['sunset','Sunset'],['graphite','Graphite']],s.theme)}`)}${category('appearance','Startseite',`<div class="row"><button class="btn" id="bgp">${icon('folder')} Hintergrundbild wählen</button><button class="btn" id="bgc">Bild entfernen</button></div><label class="sw">Wetter-Ort (optional)<input type="text" value="${esc(s.weather_city||'')}" data-s="weather_city" aria-label="Wetter-Ort"></label>`)}${category('appearance','Akzentfarbe',`<p class="muted">Wird für Fokus und ausgewählte Elemente verwendet.</p><div class="row accent-swatches" role="group" aria-label="Akzentfarbe">${accents.map(c=>`<button type="button" class="swatch" data-ac="${c}" aria-label="Akzentfarbe ${c}" aria-pressed="${s.accent===c}" style="--swatch:${c}"></button>`).join('')}</div>`)}`],
+      ['privacy','Datenschutz &amp; Sicherheit','shield',`<header class="settings-intro" data-page="privacy"><h1>Datenschutz &amp; Sicherheit</h1><p class="intro">Schutzfunktionen, Verbindung und lokale Filterlisten.</p></header>${category('privacy','Website-Schutz',`${sw('ad_block','Werbe- und Tracker-Blocker')}${sw('fingerprint_protect','Anti-Fingerprinting')}${sw('webrtc_protect','WebRTC-Leak-Schutz')}${sw('https_only','HTTPS bevorzugen')}${sw('https_interstitial','Warnseite bei unverschlüsselten Seiten')}${sw('strip_tracking','Tracking-Parameter entfernen')}${sw('cookie_banners','Cookie-Banner automatisch behandeln')}${sw('block_popups','Popups blockieren')}${sw('block_autoplay','Autoplay blockieren (Neustart nötig)')}${sw('block_third_party_cookies','Drittanbieter-Cookies blockieren (experimentell, Neustart nötig)')}`)}${category('privacy','Tor-Verbindung',`${sw('vpn_enabled','Tor-Verbindung verwenden')}${sw('kill_switch','Kill-Switch aktivieren')}<label class="sw">Austrittsland<select data-s="vpn_exit_country">${C.map(c=>`<option value="${c}" ${s.vpn_exit_country===c?'selected':''}>${c.toUpperCase()}</option>`).join('')}</select></label>${sw('tor_per_tab','Eigener Tor-Kreis pro Tab')}<label class="sw bridge-label">Bridges<textarea data-s="bridges" rows="3" placeholder="Eine Bridge pro Zeile" aria-label="Tor-Bridges">${esc(s.bridges||'')}</textarea></label><p class="muted">Nach Änderungen an Bridges Tor einmal aus- und wieder einschalten.</p>`)}${category('privacy','DNS',`<label class="sw">DNS-Server${sel('dns_mode',[['system','System'],['quad9','Quad9 (DoH)'],['cloudflare','Cloudflare (DoH)'],['google','Google (DoH)'],['custom','Eigene IP']],s.dns_mode)}</label><label class="sw">Eigene DNS-IP<input type="text" value="${esc(s.dns_custom)}" data-s="dns_custom"></label>`)}${category('privacy','Blocklisten',`${blSection()}<label class="sw">Aktualisierung${sel('bl_update',[['startup','Beim Browserstart'],['on_open','Beim Öffnen einer Seite'],['interval','In Intervallen'],['monthly','Monatlich'],['manual','Nur manuell']],s.bl_update)}</label><label class="sw">Intervall (Stunden)<input type="number" min="1" value="${s.bl_interval_hours}" data-r="bl_interval_hours"></label>`)}`],
+      ['extensions','Erweiterungen','puzzle',`<header class="settings-intro" data-page="extensions"><h1>Erweiterungen</h1><p class="intro">Installiere und verwalte unterstützte Browser-Erweiterungen.</p></header>${category('extensions','Installieren',`<div class="row"><input id="exi" type="text" placeholder="Web-Store-Link oder Erweiterungs-ID" aria-label="Erweiterungs-Link oder ID" style="flex:1"><button class="btn" id="exb">Installieren</button></div><div class="row"><button class="btn" id="exf">.crx / .zip auswählen</button><button class="btn" id="exd">Ordner auswählen</button></div>`)}${category('extensions','Installiert',extensionRows)}`],
+      ['workspace','Arbeit &amp; Synchronisierung','window',`<header class="settings-intro" data-page="workspace"><h1>Arbeit &amp; Synchronisierung</h1><p class="intro">Arbeitsbereiche speichern Tab-Sets; Synchronisierung verwendet deinen Ordner und den verschlüsselten Tresor.</p></header>${category('workspace','Arbeitsbereiche &amp; Import',`<div class="row"><button class="btn" data-a="workspaces">Arbeitsbereiche verwalten</button><button class="btn" data-a="import">Browserdaten importieren</button><button class="btn" data-a="gaming_toggle">Gaming-Modus umschalten</button></div>`)}${category('workspace','Synchronisierung',`<div class="row"><button class="btn" id="sp">Sync-Ordner wählen</button><button class="btn" data-a="sync_now">Jetzt synchronisieren</button></div><p class="muted">${esc(s.sync_folder||'Kein Ordner gewählt')} · benötigt einen entsperrten Tresor.</p>`)}`],
+      ['accessibility','Navigation &amp; Medien','search',`<header class="settings-intro" data-page="accessibility"><h1>Navigation &amp; Medien</h1><p class="intro">Tastatur-Navigation, Mausgesten und Vorleseoptionen.</p></header>${category('accessibility','Navigation',`${sw('hints_enabled','Tasten-Navigation für Links')}${sw('mouse_gestures','Mausgesten aktivieren')}<label class="sw">Hinweis-Taste (Umschalt öffnet im neuen Tab)<input type="text" maxlength="1" value="${esc(s.hint_key)}" data-s="hint_key"></label><label class="sw">Hinweis-Buchstaben<input type="text" value="${esc(s.hint_chars)}" data-s="hint_chars"></label>`)}${category('accessibility','Vorlesen',`<label class="sw">Windows-Stimme (leer = Standard)<input type="text" value="${esc(s.tts_voice)}" data-s="tts_voice"></label><label class="sw">Tempo (−10 bis 10)<input type="range" min="-10" max="10" step="1" value="${s.tts_rate}" data-r="tts_rate"></label><label class="sw">Eigenes TTS-Kommando (Text über stdin)<input type="text" value="${esc(s.tts_cmd)}" data-s="tts_cmd"></label><button class="btn" id="ttsv">Verfügbare Stimmen anzeigen</button>`)}`],
+      ['data','Daten &amp; Tastenkürzel','keyboard',`<header class="settings-intro" data-page="data"><h1>Daten &amp; Tastenkürzel</h1><p class="intro">Lokale Daten, Diagnoseoptionen und frei belegbare Browserkürzel.</p></header>${category('data','Datenschutz-Bericht',`${sw('stats_enabled','Statistik geblockter Anfragen speichern')}<button class="btn" data-a="privacy">Datenschutz-Bericht öffnen</button>${sw('hibp_enabled','Have-I-Been-Pwned-Prüfung erlauben')}${sw('vt_enabled','Downloads mit VirusTotal prüfen')}<label class="sw">VirusTotal-API-Schlüssel<input type="text" value="${esc(s.vt_key)}" data-s="vt_key"></label><p class="muted">An VirusTotal wird nur der Datei-Hash gesendet. Der Schlüssel bleibt im lokalen Profil.</p>`)}${category('data','Browserdaten',`${sw('clear_on_exit','Beim Beenden Browserdaten löschen')}<button class="btn" id="cd">${icon('trash')} Browserdaten jetzt löschen</button>`)}${category('data','Tastenkürzel',`${S.actions.map(a=>`<div class="row shortcut-row"><span style="flex:1;min-width:0">${esc(a.label)}</span><button class="btn" data-ka="${esc(a.id)}">${capturing===a.id?'Taste drücken…':esc(a.combo||'Nicht belegt')}</button></div>`).join('')}<button class="btn" id="kr">Tastenkürzel zurücksetzen</button>`)}`]
+    ];
+    const nav=pages.map(([id,label,ic])=>`<button type="button" data-page-link="${id}" aria-current="${settingsPage===id?'page':'false'}" class="${settingsPage===id?'selected':''}">${icon(ic)}<span class="nav-text">${label}</span></button>`).join('');
+    const content=pages.map(([, , ,body])=>body).join('');
+    $.innerHTML=`<div class="ov"><div class="settings-shell" role="dialog" aria-modal="true" aria-label="Einstellungen"><nav class="settings-nav" aria-label="Einstellungskategorien"><div class="settings-brand">${mark}<strong>Liquid Flow</strong></div>${nav}</nav><main class="settings-main"><label class="sr-only" for="setting-search">Einstellungen durchsuchen</label><input id="setting-search" class="settings-search" type="search" placeholder="Einstellungen durchsuchen" aria-label="Einstellungen durchsuchen"><p id="setting-empty" class="muted" hidden>Keine passenden Einstellungen gefunden.</p>${content}<button class="btn close-settings" id="c">Schließen</button></main></div></div>`;
+    const selectPage=id=>{settingsPage=id;$.querySelectorAll('[data-page-link]').forEach(e=>{e.classList.toggle('selected',e.dataset.pageLink===id);e.setAttribute('aria-current',e.dataset.pageLink===id?'page':'false')});$.querySelectorAll('[data-page]').forEach(e=>e.hidden=e.dataset.page!==id);};
+    const filterSettings=q=>{const f=q.trim().toLocaleLowerCase();let count=0;$.querySelectorAll('[data-page]').forEach(e=>{const match=!f||e.textContent.toLocaleLowerCase().includes(f);e.hidden=f?!match:e.dataset.page!==settingsPage;if(match)count++});$.querySelectorAll('[data-page-link]').forEach(e=>{const parts=[...$.querySelectorAll(`[data-page="${e.dataset.pageLink}"]`)];e.hidden=!!f&&!parts.some(p=>p.textContent.toLocaleLowerCase().includes(f))});document.getElementById('setting-empty').hidden=!!count;};
+    $.querySelectorAll('[data-page-link]').forEach(e=>e.onclick=()=>{document.getElementById('setting-search').value='';selectPage(e.dataset.pageLink);filterSettings('');$.querySelector('.settings-main').scrollTop=0;});
+    document.getElementById('setting-search').oninput=e=>filterSettings(e.target.value);
+    selectPage(settingsPage);
     $.querySelectorAll('input[type=checkbox]').forEach(e=>e.onchange=()=>set(e.dataset.k,e.checked));
     $.querySelectorAll('[data-s]').forEach(e=>e.onchange=()=>set(e.dataset.s,e.value));
     $.querySelectorAll('[data-r]').forEach(e=>e.onchange=()=>set(e.dataset.r,+e.value));
@@ -305,6 +383,7 @@ function view(){
     $.querySelectorAll('[data-a]').forEach(e=>e.onclick=()=>send({t:'action',id:e.dataset.a})); cd.onclick=()=>send({t:'action',id:'clear_data'});
   }
 }
+document.addEventListener('pointerdown',e=>{const wrap=document.querySelector('.menu-wrap');if(wrap&&!wrap.contains(e.target)){const menu=document.getElementById('mainmenu'),btn=document.getElementById('menubtn');if(menu&&!menu.hidden){menu.hidden=true;btn.setAttribute('aria-expanded','false');}}});
 document.addEventListener('keydown',e=>{
   if(['Control','Shift','Alt','Meta'].includes(e.key)) return;
   if(capturing){ e.preventDefault(); if(e.key!=='Escape') send({t:'keymap',a:capturing,c:combo(e)}); capturing=null; view(); return; }

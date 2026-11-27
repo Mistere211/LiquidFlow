@@ -148,9 +148,9 @@ pub const READER_JS: &str = r#"(function(){
 
 pub fn theme_bg(name: &str) -> &'static str {
     match name {
-        "ocean" => "linear-gradient(135deg,#0f4c75,#0a1628)", "aurora" => "linear-gradient(135deg,#0b3d2e,#1a1040)",
-        "sunset" => "linear-gradient(135deg,#4a1942,#1b0a2a)", "graphite" => "linear-gradient(135deg,#1c1f26,#0c0d10)",
-        _ => "radial-gradient(circle at 30% 20%,#16305a,#0a0f1e)",
+        "ocean" => "#101a20", "aurora" => "#111c19",
+        "sunset" => "#201719", "graphite" => "#11161d",
+        _ => "#11161d",
     }
 }
 
@@ -159,12 +159,12 @@ pub fn start_html(s: &Settings) -> String {
     let action = s.search_url("").trim_end_matches('+').rsplit_once('?').map(|x| x.0.to_string()).unwrap_or_default();
     let esc = |x: &str| x.replace('&', "&amp;").replace('<', "&lt;").replace('"', "&quot;");
     let dials: String = s.quick_dials.iter().map(|d| format!(
-        "<a href=\"{u}\"><img src=\"https://icons.duckduckgo.com/ip3/{h}.ico\" onerror=\"this.style.visibility='hidden'\"><span>{n}</span></a>",
-        u = esc(&d.url), h = host_of(&d.url), n = esc(&d.name))).collect();
+        "<a href=\"{u}\" title=\"{host}\"><span class=\"dial-mark\" aria-hidden=\"true\">{mark}</span><span class=\"dial-name\">{n}</span><span class=\"dial-host\">{host}</span></a>",
+        u = esc(&d.url), host = esc(&host_of(&d.url)), mark = esc(&d.name.chars().next().unwrap_or('S').to_uppercase().to_string()), n = esc(&d.name))).collect();
     let bg = match std::fs::read(crate::data::home().join("bg.img")) {
         Ok(b) if !b.is_empty() => {
             let mime = if b.starts_with(b"\x89PNG") { "image/png" } else if b.len() > 12 && &b[8..12] == b"WEBP" { "image/webp" } else { "image/jpeg" };
-            format!("linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),url(data:{mime};base64,{}) center/cover", base64::engine::general_purpose::STANDARD.encode(b))
+            format!("url(data:{mime};base64,{}) center/cover", base64::engine::general_purpose::STANDARD.encode(b))
         }
         _ => theme_bg(&s.theme).to_string(),
     };
@@ -172,16 +172,43 @@ pub fn start_html(s: &Settings) -> String {
         .replace("__CITY__", &serde_json::to_string(&s.weather_city).unwrap_or_else(|_| "\"\"".into()))
 }
 
-const START_TPL: &str = r#"<!doctype html><meta charset="utf-8"><title>Liquid Flow</title><style>
-html,body{height:100%;margin:0;background:__BG__;color:#e8f1ff;font:15px system-ui,sans-serif}
-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px}
-.logo{width:56px;height:56px;border-radius:50% 50% 50% 12px;background:linear-gradient(135deg,#5ad1ff,#7b6bff)}
-#clock{font-size:64px;font-weight:200;letter-spacing:2px}#date{opacity:.7;margin-top:-14px}#wx{opacity:.8;min-height:20px}
-form{width:min(560px,86vw)}input{width:100%;box-sizing:border-box;padding:14px 20px;border-radius:99px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.1);backdrop-filter:blur(14px);color:inherit;font:inherit;outline:0}
-.d{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}.d a{width:92px;padding:14px 6px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(14px);display:flex;flex-direction:column;align-items:center;gap:8px;color:inherit;text-decoration:none;transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
-.d a:hover{transform:translateY(-4px) scale(1.06)}.d img{width:28px;height:28px;border-radius:7px}</style>
-<div class="logo"></div><div id="clock"></div><div id="date"></div><div id="wx"></div>
-<form action="__ACTION__" method="get"><input name="q" placeholder="Suchen…" autofocus></form><div class="d">__DIALS__</div>
+const START_TPL: &str = r#"<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Liquid Flow · Neuer Tab</title><style>
+:root{color-scheme:dark;--page:#11161d;--surface:#191f26;--line:#303a43;--text:#e5e9ec;--muted:#9ba6af;--quiet:#77838d;--accent:#70c8bd}
+*{box-sizing:border-box}html,body{min-height:100%;margin:0;background:__BG__;color:var(--text);font:14px/1.5 "Segoe UI Variable","Segoe UI",system-ui,sans-serif}
+body{min-height:100vh;display:flex;justify-content:center;background-color:var(--page);background-position:center;background-size:cover;background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;background:rgba(8,12,16,.48);pointer-events:none}
+.page{position:relative;z-index:1;width:min(820px,calc(100% - 64px));min-height:100vh;padding:54px 0 42px;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:24px;border-bottom:1px solid rgba(180,195,202,.13)}
+.identity{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.14em;font-weight:650;color:#d9e0e2}
+.mark{width:25px;height:25px;display:grid;place-items:center;border:1px solid rgba(112,200,189,.5);border-radius:6px;color:var(--accent);background:#1b3030}
+.mark svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#wx{color:var(--muted);font-size:12px;min-height:18px;text-align:right}
+main{width:min(640px,100%);margin:clamp(54px,13vh,124px) auto 0}
+.time{display:flex;align-items:baseline;gap:14px}
+#clock{font-size:clamp(38px,5vw,54px);line-height:1;font-weight:350;letter-spacing:-.055em;font-variant-numeric:tabular-nums;color:#f0f3f4}
+#date{color:var(--muted);font-size:13px}
+.welcome{margin:21px 0 25px;color:#aab4bb;font-size:15px}
+form{display:flex;align-items:center;width:100%;height:48px;padding:0 12px;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:7px;transition:border-color 150ms ease,box-shadow 150ms ease}
+form:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(112,200,189,.14)}
+form svg{width:17px;height:17px;flex:none;fill:none;stroke:var(--muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+input{width:100%;height:100%;padding:0;border:0;background:transparent;color:var(--text);font:inherit;outline:0}
+input::placeholder{color:var(--quiet)}form kbd{font:11px "Cascadia Code",Consolas,monospace;color:var(--quiet);white-space:nowrap}
+.shortcuts{margin-top:42px}
+.section-title{margin:0 0 12px;color:#8e9ba3;font-size:10px;font-weight:650;letter-spacing:.13em;text-transform:uppercase}
+.d{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid rgba(180,195,202,.14);border-left:1px solid rgba(180,195,202,.14)}
+.d a{min-width:0;min-height:72px;padding:11px 13px;display:grid;grid-template-columns:30px minmax(0,1fr);grid-template-rows:1fr 1fr;column-gap:10px;align-items:center;border-right:1px solid rgba(180,195,202,.14);border-bottom:1px solid rgba(180,195,202,.14);color:inherit;text-decoration:none;transition:background 120ms ease}
+.d a:hover,.d a:focus-visible{background:rgba(112,200,189,.07);outline:0}
+.dial-mark{grid-row:1/3;display:grid;place-items:center;width:29px;height:29px;border:1px solid #3c4b50;border-radius:6px;background:#1a2529;color:var(--accent);font-size:12px;font-weight:650}
+.dial-name{align-self:end;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.dial-host{align-self:start;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--quiet);font:10px "Cascadia Code",Consolas,monospace}
+footer{margin-top:auto;padding-top:38px;color:#718089;font-size:11px}
+@media(max-width:620px){.page{width:calc(100% - 32px);padding-top:26px}main{margin-top:clamp(46px,10vh,90px)}.d{grid-template-columns:repeat(2,minmax(0,1fr))}.d a{min-height:64px}.shortcuts{margin-top:32px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+</style>
+<div class="page"><header><div class="identity"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4a13 13 0 0 1 0 16M12 4a13 13 0 0 0 0 16"/></svg></span><span>LIQUID FLOW</span></div><div id="wx" aria-live="polite"></div></header>
+<main><div class="time"><div id="clock" aria-label="Uhrzeit"></div><div id="date"></div></div><p class="welcome">Was möchtest du heute entdecken?</p>
+<form action="__ACTION__" method="get" role="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input name="q" aria-label="Im Web suchen" placeholder="Im Web suchen oder Adresse eingeben" autofocus><kbd>Enter</kbd></form>
+<section class="shortcuts" aria-label="Schnellzugriffe"><h2 class="section-title">Schnellzugriffe</h2><div class="d">__DIALS__</div></section></main><footer>Ein ruhiger Ort für deinen nächsten Schritt.</footer></div>
 <script>
 const tick=()=>{const n=new Date();clock.textContent=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
  const h=n.getHours();date.textContent=(h<5?'Gute Nacht':h<11?'Guten Morgen':h<18?'Guten Tag':'Guten Abend')+' · '+n.toLocaleDateString([], {weekday:'long',day:'numeric',month:'long'});};
