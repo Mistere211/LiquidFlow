@@ -3,7 +3,7 @@ macro_rules! wvb {
     ($s:expr) => {{
         let b = wry::WebViewBuilder::new();
         #[cfg(windows)]
-        let b = { use wry::WebViewBuilderExtWindows; b.with_additional_browser_args(browser_args($s)) };
+        let b = { use wry::WebViewBuilderExtWindows; b.with_additional_browser_args(crate::browser_args($s)) };
         b
     }};
 }

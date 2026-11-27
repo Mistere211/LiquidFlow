@@ -1,7 +1,9 @@
 //! Tab-Vorschau (nur Windows, Feature "previews"): WebView2 CapturePreview -> PNG-Bytes.
 use webview2_com::CapturePreviewCompletedHandler;
 use webview2_com::Microsoft::Web::WebView2::Win32::COREWEBVIEW2_CAPTURE_PREVIEW_IMAGE_FORMAT_PNG;
-use windows::Win32::System::Com::{CreateStreamOnHGlobal, STATFLAG_NONAME, STATSTG, STREAM_SEEK_SET};
+use windows::Win32::System::Com::StructuredStorage::{
+    CreateStreamOnHGlobal, STATFLAG_NONAME, STATSTG, STREAM_SEEK_SET,
+};
 use wry::WebViewExtWindows;
 
 pub fn capture(view: &wry::WebView, done: impl FnOnce(Vec<u8>) + 'static) {
