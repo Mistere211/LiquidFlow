@@ -1,0 +1,50 @@
+<!doctype html><meta charset="utf-8">
+<style>
+:root{--l:rgba(255,255,255,.16);--g:rgba(255,255,255,.08);--ac:#5ad1ff;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;font:14px system-ui,sans-serif;color:#e8f1ff;background:radial-gradient(circle at 25% 15%,#16305a,#0a0f1e)}
+.wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px;text-align:center}
+.logo{width:72px;height:72px;border-radius:50% 50% 50% 16px;background:linear-gradient(135deg,#5ad1ff,#7b6bff);box-shadow:0 10px 40px rgba(90,209,255,.35)}
+h1{margin:0;font-size:26px;font-weight:600}p{margin:0;opacity:.7;max-width:380px}
+.btn{background:var(--g);border:1px solid var(--l);border-radius:12px;padding:10px 22px;color:inherit;font:inherit;cursor:pointer;transition:transform .15s,border-color .15s}
+.btn:hover{transform:translateY(-1px);border-color:var(--ac)}.btn.on{background:linear-gradient(135deg,#5ad1ff,#7b6bff);border:0;color:#06101f;font-weight:600}
+.link{background:none;border:0;color:var(--ac);cursor:pointer;font:inherit}
+.panel{width:100%;max-width:420px;text-align:left;display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:14px;background:var(--g);border:1px solid var(--l)}
+.row{display:flex;gap:8px;align-items:center}.row input[type=text]{flex:1;min-width:0;background:rgba(0,0,0,.25);border:1px solid var(--l);border-radius:8px;padding:7px 10px;color:inherit;outline:0}
+label.c{display:flex;gap:8px;align-items:center}
+.bar{width:100%;max-width:380px;height:10px;border-radius:99px;background:var(--g);overflow:hidden}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#5ad1ff,#7b6bff);transition:width .25s}
+.s{display:none;flex-direction:column;align-items:center;gap:16px;width:100%}.s.on{display:flex}.err{color:#fb7185}
+</style>
+<div class="wrap">
+ <div class="logo"></div>
+ <div class="s" id="s-welcome"><h1>Liquid Flow</h1><p>Schneller, privater Browser. Wird für dein Benutzerkonto installiert – ohne Administratorrechte.</p>
+  <div class="panel" id="opts" style="display:none"><div class="row"><input type="text" id="dir"><button class="btn" id="pick">…</button></div>
+   <label class="c"><input type="checkbox" id="desktop" checked> Desktop-Verknüpfung</label>
+   <label class="c"><input type="checkbox" id="updates" checked> Automatisch aktuell halten (Hintergrund-Updater)</label>
+   <label class="c"><input type="checkbox" id="defaults"> Windows-Standard-Apps zum Wählen öffnen</label></div>
+  <button class="btn on" id="go">Installieren</button><button class="link" id="more">Anpassen</button></div>
+ <div class="s" id="s-progress"><h1 id="ptitle">Installiere…</h1><div class="bar"><i id="pbar"></i></div><p id="pmsg">Starte…</p></div>
+ <div class="s" id="s-done"><h1 id="dtitle">Fertig!</h1><p id="dmsg">Liquid Flow ist installiert.</p><button class="btn on" id="launch">Liquid Flow starten</button><button class="link" id="close1">Schließen</button></div>
+ <div class="s" id="s-error"><h1>Das hat nicht geklappt</h1><p class="err" id="emsg"></p><button class="btn on" id="retry">Erneut versuchen</button><button class="link" id="close2">Schließen</button></div>
+ <div class="s" id="s-uninstall"><h1>Liquid Flow entfernen?</h1><p>Der Browser, die Verknüpfungen und der Updater werden entfernt.</p>
+  <label class="c"><input type="checkbox" id="wipe"> Auch Verlauf, Lesezeichen, Einstellungen und Tresor löschen</label>
+  <button class="btn on" id="rm">Deinstallieren</button><button class="link" id="close3">Abbrechen</button></div>
+</div>
+<script>
+const $=i=>document.getElementById(i), send=o=>window.ipc.postMessage(JSON.stringify(o));
+let mode=window.MODE||'install', uninstalling=false;
+function screen(n){ document.querySelectorAll('.s').forEach(e=>e.classList.toggle('on',e.id==='s-'+n)); }
+function setProgress(p,m){ $('pbar').style.width=Math.round(p*100)+'%'; $('pmsg').textContent=m; }
+function showDone(){ $('dtitle').textContent=uninstalling?'Entfernt':'Fertig!'; $('dmsg').textContent=uninstalling?'Liquid Flow wurde deinstalliert.':'Liquid Flow ist installiert.'; $('launch').style.display=uninstalling?'none':''; screen('done'); }
+function showError(m){ $('emsg').textContent=m; screen('error'); }
+function setDir(d){ $('dir').value=d; }
+setDir(window.DEF_DIR||'');
+screen(mode==='uninstall'?'uninstall':'welcome');
+$('more').onclick=()=>{ $('opts').style.display=$('opts').style.display==='none'?'flex':'none'; };
+$('pick').onclick=()=>send({t:'pick'});
+const start=()=>{ uninstalling=false; $('ptitle').textContent='Installiere…'; setProgress(0,'Starte…'); screen('progress');
+  send({t:'install',dir:$('dir').value,desktop:$('desktop').checked,updates:$('updates').checked,defaults:$('defaults').checked}); };
+$('go').onclick=start; $('retry').onclick=()=>{ if(mode==='uninstall') $('rm').onclick(); else start(); };
+$('rm').onclick=()=>{ uninstalling=true; $('ptitle').textContent='Entferne…'; setProgress(0,'Starte…'); screen('progress'); send({t:'uninstall',dir:$('dir').value,data:$('wipe').checked}); };
+$('launch').onclick=()=>send({t:'launch',dir:$('dir').value});
+['close1','close2','close3'].forEach(i=>$(i).onclick=()=>send({t:'close'}));
+</script>

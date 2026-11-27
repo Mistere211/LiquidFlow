@@ -1,0 +1,316 @@
+<!doctype html><meta charset="utf-8">
+<style>
+:root{--bg:#0a0f1e;--g:rgba(255,255,255,.07);--l:rgba(255,255,255,.14);--ac:#5ad1ff;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bgimg,var(--bg));color:#e8f1ff;font:14px system-ui,sans-serif;overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+.logo{width:22px;height:22px;flex:none;border-radius:50% 50% 50% 6px;background:linear-gradient(135deg,#5ad1ff,#7b6bff)}
+.glass{background:var(--g);border:1px solid var(--l);border-radius:14px}
+.row{display:flex;align-items:center;gap:10px}
+.btn{background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 12px;cursor:pointer}
+.btn:hover,.on{border-color:var(--ac)}
+/* bar */
+.bar{padding:8px;display:flex;flex-direction:column;gap:8px;height:100%}
+.bar .glass{height:36px;padding:0 12px}
+.bar input{flex:1;background:none;border:0;outline:0}
+.ic{padding:3px 9px;border-radius:9px}
+.tab{transition:transform .2s cubic-bezier(.3,1.6,.5,1),background .2s,border-color .2s}.tab:hover{transform:translateY(-1px) scale(1.04);background:rgba(255,255,255,.13)}
+.btn{transition:transform .15s,border-color .15s}.btn:hover{transform:translateY(-1px)}.pill{transition:filter .2s}.pill:hover{filter:brightness(1.3)}
+.pill{font-size:12px;padding:3px 10px;border-radius:99px;background:var(--g);cursor:pointer}
+.pill.connected{background:#1d7a4a}.pill.connecting{background:#8a6d1a}.pill.error{background:#8a2a2a}
+/* side */
+.side{display:flex;flex-direction:column;gap:6px;padding:8px 8px 8px 8px;height:100%;overflow:auto}
+.side.top{flex-direction:row;align-items:center;overflow-x:auto}
+.tab{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 6px;border-radius:10px;background:var(--g);cursor:pointer;border:1px solid transparent}
+.tab.act{border-color:var(--ac)}.tab.paused{opacity:.5}
+.tab img{width:20px;height:20px;border-radius:5px;flex:none}
+.tab .t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tab .x{opacity:.5}
+.side:not(.wide) .t,.side:not(.wide) .x{display:none}
+.side:not(.wide):not(.top) .tab{justify-content:center;width:46px}
+/* overlays */
+.ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bgimg,radial-gradient(circle at 30% 20%,#16305a,#0a0f1e))}
+.card{max-height:92vh;overflow:auto;width:min(560px,92vw);padding:28px;display:flex;flex-direction:column;gap:16px}
+.card h1{margin:0;font-size:24px}.opts{display:flex;flex-wrap:wrap;gap:8px}
+label.sw{display:flex;justify-content:space-between;align-items:center}
+</style>
+<div id="app"></div>
+<script>
+const R=window.ROLE, send=o=>window.ipc.postMessage(JSON.stringify(o)), $=document.getElementById('app');
+let S=null, step=0, draft=null, capturing=null;
+window.focusUrl=()=>{const i=document.getElementById('u'); if(i){i.focus(); i.select();}};
+const combo=e=>{let m=''; if(e.ctrlKey)m+='Ctrl+'; if(e.altKey)m+='Alt+'; if(e.shiftKey)m+='Shift+'; if(e.metaKey)m+='Meta+'; let k=e.key; if(k.length===1)k=k.toUpperCase(); if(k===' ')k='Space'; return m+k;};
+const fav=u=>{try{return 'https://icons.duckduckgo.com/ip3/'+new URL(u).hostname+'.ico'}catch(e){return ''}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const set=(k,v)=>{(draft||S.settings)[k]=v; if(R==='settings') send({t:'settings',s:S.settings}); else view();};
+const fmt=t=>t?new Date(t*1000).toLocaleDateString():'noch nie';
+const sel=(k,o,cur)=>`<select data-s="${k}">${o.map(([v,l])=>`<option value="${v}" ${cur===v?'selected':''}>${l}</option>`).join('')}</select>`;
+function blSection(){
+  const L=S.settings.blocklists||[];
+  return `<div class="row"><input id="blu" type="text" placeholder="Blocklist-Link einfügen (z. B. von GitHub)…" style="flex:1;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px"><button class="btn" id="bla">Hinzufügen</button></div>
+  <div class="row"><button class="btn" id="blf">Datei / ZIP…</button><button class="btn" id="bld">Ordner…</button><span style="opacity:.6">${(S.bl_total||0).toLocaleString()} Domains aktiv</span></div>`+
+  L.map(l=>`<div class="row"><input type="checkbox" ${l.enabled?'checked':''} data-bt="${l.id}"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.name)} · ${l.count.toLocaleString()} · ${fmt(l.last_updated)}</span><button class="btn" data-br="${l.id}">↻</button><button class="btn" data-bx="${l.id}">✕</button></div>`).join('');
+}
+function bindBl(){
+  const a=document.getElementById('bla'); if(!a) return;
+  a.onclick=()=>{const v=blu.value.trim(); if(v){send({t:'bl_add_url',v}); blu.value='';}};
+  blf.onclick=()=>send({t:'bl_pick',dir:false}); bld.onclick=()=>send({t:'bl_pick',dir:true});
+  $.querySelectorAll('[data-bt]').forEach(e=>e.onchange=()=>send({t:'bl_toggle',id:e.dataset.bt}));
+  $.querySelectorAll('[data-br]').forEach(e=>e.onclick=()=>send({t:'bl_refresh',id:e.dataset.br}));
+  $.querySelectorAll('[data-bx]').forEach(e=>e.onclick=()=>send({t:'bl_remove',id:e.dataset.bx}));
+}
+window.__cap=(id,url)=>{ const im=new Image(); im.onload=()=>{ const w=240,h=Math.round(im.height*w/im.width); const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(im,0,0,w,h); send({t:'thumb',id,d:c.toDataURL('image/jpeg',0.6)}); }; im.src=url; };
+let hoverId=0;
+const copyText=x=>{ const a=document.createElement('textarea'); a.value=x; document.body.appendChild(a); a.select(); try{document.execCommand('copy')}catch(e){} a.remove(); };
+if(!window.__vt) window.__vt=setInterval(()=>{ document.querySelectorAll('[data-rem]').forEach(e=>{ let r=+e.dataset.rem-1; if(r<=0){ send({t:'vault_refresh'}); r=0; } e.dataset.rem=r; e.textContent=r+'s'; }); },1000);
+function importSection(){ const imps=(S.x&&S.x.imports)||[]; if(!window.impSel) window.impSel=new Set(imps.map(i=>i.id));
+  return imps.length?imps.map(i=>`<label class="sw">${esc(i.name)}<input type="checkbox" data-imp="${esc(i.id)}" ${window.impSel.has(i.id)?'checked':''}></label>`).join('')+`<div class="row"><label class="c"><input type="checkbox" id="impb" checked> Lesezeichen</label><label class="c"><input type="checkbox" id="imph" checked> Verlauf</label><button class="btn on" id="impgo">Importieren</button></div><small style="opacity:.6">Gespeicherte Passwörter werden nicht übernommen (sie sind verschlüsselt). Der andere Browser sollte geschlossen sein.</small>`:'<p style="opacity:.7;margin:0">Keine Chrome-, Edge-, Brave-, Vivaldi- oder Firefox-Profile gefunden.</p>'; }
+function bindImport(){ $.querySelectorAll('[data-imp]').forEach(e=>e.onchange=()=>{ e.checked?window.impSel.add(e.dataset.imp):window.impSel.delete(e.dataset.imp); });
+  const g=document.getElementById('impgo'); if(g) g.onclick=()=>send({t:'import_run',ids:[...window.impSel],bm:document.getElementById('impb').checked,hist:document.getElementById('imph').checked}); }
+const THEMES={liquid:'radial-gradient(circle at 30% 20%,#16305a,#0a0f1e)',ocean:'linear-gradient(135deg,#0f4c75,#0a1628)',aurora:'linear-gradient(135deg,#0b3d2e,#1a1040)',sunset:'linear-gradient(135deg,#4a1942,#1b0a2a)',graphite:'linear-gradient(135deg,#1c1f26,#0c0d10)'};
+function render(st){ S=st; document.documentElement.style.setProperty('--bgimg',THEMES[st.settings.theme]||THEMES.liquid); document.documentElement.style.setProperty('--ac',st.settings.accent||'#5ad1ff'); if(!draft) draft=JSON.parse(JSON.stringify(st.settings)); view(); }
+function view(){
+  const s=S.settings, ae=document.activeElement;
+  if((['settings','onboard','palette','find','history','bookmarks','downloads','vault','tools','leak','profiles','workspaces','privacy','qr','import'].includes(R))&&ae&&((ae.tagName==='INPUT'&&(ae.type==='text'||ae.type==='password'))||ae.tagName==='TEXTAREA')) return;
+  if(R==='bar'){
+    const a=S.tabs.find(t=>t.id===S.active)||{url:''}, ui=document.activeElement&&document.activeElement.id; if(a.url.startsWith("liquid:"))a.url="";
+    if(ui==='u'||ui==='q') return;
+    $.innerHTML=`<div class="bar"><div class="glass row" style="gap:4px"><button class="btn ic" data-a="back">←</button><button class="btn ic" data-a="forward">→</button><button class="btn ic" data-a="reload">⟳</button><input id="u" placeholder="Link eingeben…" value="${esc(a.url)}"><button class="btn ic" data-a="bookmark">${S.site.bookmarked?"★":"☆"}</button></div>
+    <div class="glass row"><div class="logo"></div><input id="q" placeholder="Suchen mit ${esc(s.search_engine)}…">
+    ${(S.exts||[]).filter(x=>x.on&&x.popup).map(x=>`<button class="btn ic" data-ep="${x.id}" title="${esc(x.name)}">${esc(x.name.slice(0,1).toUpperCase())}</button>`).join('')}${S.notice?`<span class="pill" id="nt2" style="background:#8a6d1a;cursor:pointer">${esc(S.notice)} ✕</span>`:''}${S.update?`<span class="pill" data-a="update_install" style="background:#1d7a4a;cursor:pointer">${S.update==='restart'?'↻ Neu starten':'⬆ Update'}</span>`:''}${S.x&&S.x.gaming?'<span class="pill" data-a="gaming_toggle" style="background:#6d28d9;cursor:pointer">🎮 Gaming</span>':''}<span class="pill" title="Speicher aller Browser-Prozesse">💾 ${(S.x&&S.x.mem)||0} MB</span><span class="pill" id="sh" title="Seiten-Schutz">🛡 ${S.blocked||0}</span>${(S.x&&S.x.route&&S.x.route.length)?`<span class="pill" title="${esc(S.x.route.join('\n'))}">🧅 ${esc(S.x.route.map(h=>h.split(' ')[0]).join(' → '))}</span>`:''}<span class="pill ${S.vpn}" id="v">VPN: ${S.vpn}</span><button class="btn ic" data-a="downloads">⬇</button><button class="btn ic" id="st">⚙</button></div></div>`;
+    u.onkeydown=e=>{ if(e.key==='Enter'){send({t:'suggest_close'});send({t:'go',v:u.value});} else if(e.key==='Escape') send({t:'suggest_close'}); }; let sgt; u.oninput=()=>{clearTimeout(sgt); sgt=setTimeout(()=>send({t:'suggest',q:u.value}),90);}; q.onkeydown=e=>{if(e.key==='Enter'){send({t:'search',v:q.value});q.value='';q.blur()}};
+    v.onclick=()=>{s.vpn_enabled=!s.vpn_enabled;send({t:'settings',s})}; st.onclick=()=>send({t:'open_settings'}); sh.onclick=()=>send({t:'open_shield'}); $.querySelectorAll('[data-a]').forEach(e=>e.onclick=()=>send({t:'action',id:e.dataset.a}));
+    $.querySelectorAll('[data-ep]').forEach(e=>e.onclick=()=>send({t:'ext_popup',id:e.dataset.ep})); if(window.nt2) nt2.onclick=()=>send({t:'notice_clear'});
+  }
+  if(R==='side'){
+    $.innerHTML=`<div class="side ${s.tabs_on_top?'top':''} ${s.tabs_wide?'wide':''}">`+S.tabs.map(t=>
+      `<div class="tab ${t.id===S.active?'act':''} ${t.paused?'paused':''}" data-id="${t.id}" title="${esc(t.title+' — '+t.url)}" style="border-left:3px solid ${['transparent','#5ad1ff','#4ade80','#fbbf24','#fb7185','#a78bfa'][t.group||0]}">${t.url.startsWith("http")?`<img src="${fav(t.url)}">`:`<div class="logo" style="width:20px;height:20px"></div>`}<span class="t">${t.id===S.split?"◨ ":""}${t.private?"🕶 ":""}${esc(t.title)}</span><span class="x" data-x="${t.id}">✕</span></div>`).join('')+
+      `<div class="tab" id="nt" style="justify-content:center;width:46px">＋</div><div class="tab" id="np" style="justify-content:center;width:46px" title="Privater Tab">🕶</div></div>`;
+    $.querySelectorAll('.tab[data-id]').forEach(e=>e.onclick=ev=>{const x=ev.target.dataset.x; send(x?{t:'close',id:+x}:{t:'switch',id:+e.dataset.id})});
+    $.querySelectorAll('.tab[data-id]').forEach(e=>{ e.onmouseenter=()=>{ const id=+e.dataset.id; if(hoverId===id)return; hoverId=id; const r=e.getBoundingClientRect(); send({t:'hover',id,x:r.left,y:r.top}); }; e.onmouseleave=()=>{ hoverId=0; send({t:'hover_end'}); }; });
+    nt.onclick=()=>send({t:'newtab'}); np.onclick=()=>send({t:'newtab',private:true});
+  }
+  if(R==='onboard'){
+    const d=draft, E=['duckduckgo','google','brave'], ck=(k,l)=>`<label class="sw">${l}<input type="checkbox" ${d[k]?'checked':''} data-k="${k}" data-c></label>`;
+    const pages=[
+      `<div class="logo" style="width:48px;height:48px"></div><h1>Willkommen bei Liquid Flow</h1><p>Schnell, sauber, privat. Wir richten kurz alles ein.</p>`,
+      `<h1>Suchmaschine</h1><div class="opts">${E.map(e=>`<button class="btn ${d.search_engine===e?'on':''}" data-k="search_engine" data-v="${e}">${e}</button>`).join('')}</div>`,
+      `<h1>Tabs</h1><div class="opts"><button class="btn ${!d.tabs_wide?'on':''}" data-k="tabs_wide" data-v="false">Nur Logo</button><button class="btn ${d.tabs_wide?'on':''}" data-k="tabs_wide" data-v="true">Logo + Name</button></div>
+       <div class="opts"><button class="btn ${!d.tabs_on_top?'on':''}" data-k="tabs_on_top" data-v="false">Seitenleiste</button><button class="btn ${d.tabs_on_top?'on':''}" data-k="tabs_on_top" data-v="true">Oben</button></div>
+       <label class="sw">Hintergrund-Tabs pausieren<input type="checkbox" ${d.suspend_background_tabs?'checked':''} data-k="suspend_background_tabs" data-c></label>`,
+      `<h1>Tor-VPN</h1><label class="sw">VPN aktivieren<input type="checkbox" ${d.vpn_enabled?'checked':''} data-k="vpn_enabled" data-c></label>
+       <label class="sw">Kill-Switch<input type="checkbox" ${d.kill_switch?'checked':''} data-k="kill_switch" data-c></label>`,
+      `<h1>Werbeblocker</h1><p style="opacity:.7;margin:0">Optional: Domain-Blocklisten per Link, Datei, ZIP oder Ordner.</p>${blSection()}`,
+      `<h1>Schutz</h1><p style="opacity:.7;margin:0">Das gilt für alle Seiten – pro Seite änderst du es später über das 🛡.</p>${ck('ad_block','Werbe- und Tracker-Blocker')}${ck('cookie_banners','Cookie-Banner automatisch ablehnen')}${ck('https_only','Nur HTTPS')}${ck('https_interstitial','Warnseite statt Fehler bei HTTP')}${ck('fingerprint_protect','Anti-Fingerprinting')}${ck('webrtc_protect','WebRTC-Leak-Schutz')}${ck('strip_tracking','Tracking-Parameter entfernen')}${ck('block_popups','Popups blockieren')}${ck('block_autoplay','Autoplay blockieren')}${ck('stats_enabled','Datenschutz-Bericht (Statistik) führen')}${ck('hibp_enabled','Passwort-Check (Have I Been Pwned) erlauben')}`,
+      `<h1>Komfort</h1>${ck('restore_session','Tabs beim Start wiederherstellen')}${ck('hints_enabled','Tasten-Navigation (Taste F zeigt Link-Hinweise)')}${ck('mouse_gestures','Mausgesten (rechte Taste ziehen)')}<p style="opacity:.7;margin:0">Alle Tastenkürzel änderst du in den Einstellungen. Strg+K öffnet die Befehlspalette.</p>`,
+      `<h1>Import</h1><p style="opacity:.7;margin:0">Lesezeichen und Verlauf aus deinem alten Browser übernehmen.</p>${importSection()}`,
+      `<h1>Fertig!</h1><p>Alles lässt sich später in den Einstellungen (⚙) ändern.</p>`];
+    $.innerHTML=`<div class="ov"><div class="card glass">${pages[step]}<div class="row" style="justify-content:flex-end">
+      ${step>0?'<button class="btn" id="b">Zurück</button>':''}<button class="btn on" id="n">${step===pages.length-1?'Starten':'Weiter'}</button></div></div></div>`;
+    $.querySelectorAll('[data-k]').forEach(e=>e.onclick=e.onchange=()=>{d[e.dataset.k]=e.dataset.c!==undefined?e.checked:(e.dataset.v==='true'||(e.dataset.v==='false'?false:e.dataset.v)); view()});
+    n.onclick=()=>step===pages.length-1?send({t:'onboard_done',s:d}):(step++,view()); if(window.b) b.onclick=()=>(step--,view()); bindBl(); bindImport();
+  }
+  if(R==='palette'){
+    const cmds=[...S.actions.map(a=>[a.label+(a.combo?'   '+a.combo:''),{t:'action',id:a.id}]),...S.tabs.map(t=>['Tab: '+t.title,{t:'switch',id:t.id}]),...S.bookmarks.map(b=>['★ '+(b.title||b.url),{t:'open_url',url:b.url}]),...S.history.slice(0,30).map(h=>['↺ '+(h.title||h.url),{t:'open_url',url:h.url}])];
+    $.innerHTML=`<div class="ov" style="align-items:flex-start;padding-top:12vh"><div class="card glass"><input id="pq" type="text" placeholder="Befehl oder Tab suchen…" style="background:none;border:0;outline:0;font-size:18px"><div id="pl"></div></div></div>`;
+    const draw=()=>{const f=pq.value.toLowerCase(); pl.innerHTML=cmds.map((c,i)=>[c,i]).filter(([c])=>c[0].toLowerCase().includes(f)).slice(0,8).map(([c,i])=>`<div class="tab" data-i="${i}">${esc(c[0])}</div>`).join('')};
+    const run=i=>{send({t:'close_overlay'}); send(cmds[i][1]);};
+    pq.oninput=draw; draw(); pq.focus();
+    pl.onclick=e=>{const d=e.target.closest('[data-i]'); if(d)run(+d.dataset.i)};
+    pq.onkeydown=e=>{if(e.key==='Enter'){const d=pl.querySelector('[data-i]'); if(d)run(+d.dataset.i)}};
+    $.querySelector('.ov').onclick=e=>{if(e.target.classList.contains('ov'))send({t:'close_overlay'})};
+  }
+  if(R==='shield'){
+    const x=S.site, tg=(k,l)=>`<label class="sw">${l}<input type="checkbox" ${x[k]?'checked':''} data-sk="${k}"></label>`;
+    $.innerHTML=`<div class="ov" style="align-items:flex-start;justify-content:flex-end;padding:100px 20px;background:rgba(0,0,0,.35)"><div class="card glass" style="width:340px;background:#121a30"><h3 style="margin:0">🛡 ${esc(x.host||'Keine Seite')}</h3>${x.host?tg('adblock','Werbeblocker')+tg('fingerprint','Anti-Fingerprinting')+tg('webrtc','WebRTC-Schutz')+tg('https_only','Nur HTTPS')+tg('strip_tracking','Tracking-Parameter')+tg('dark','Dark-Mode')+tg('cookies','Cookie-Banner blocken')+tg('hints','Tasten-Navigation')+tg('block_cam','Kamera blockieren')+tg('block_mic','Mikrofon blockieren')+tg('block_geo','Standort blockieren')+`<label class="sw">Zoom<input type="range" min=".5" max="2" step=".1" value="${x.zoom}" data-sz></label>`:''}<button class="btn" id="tn">Neue Tor-Identität</button></div></div>`;
+    $.querySelectorAll('[data-sk]').forEach(e=>e.onchange=()=>send({t:'site',host:x.host,k:e.dataset.sk,v:e.checked}));
+    const z=$.querySelector('[data-sz]'); if(z) z.onchange=()=>send({t:'site',host:x.host,k:'zoom',v:+z.value});
+    tn.onclick=()=>send({t:'tor_new'});
+    $.querySelector('.ov').onclick=e=>{if(e.target.classList.contains('ov'))send({t:'close_overlay'})};
+  }
+  if(R==='preview'){ const p=S.x.preview||{};
+    $.innerHTML=`<div style="padding:8px;background:#101830;height:100%;box-sizing:border-box;border:1px solid var(--l);border-radius:12px;overflow:hidden">${p.thumb?`<img src="${p.thumb}" style="width:100%;border-radius:8px;display:block">`:''}<div style="margin-top:6px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.title||'')}</div><small style="opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${esc(p.url||'')}</small></div>`; }
+  if(R==='workspaces'){
+    const act=S.settings.active_workspace;
+    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Arbeitsbereiche</h1><button class="btn" id="c">✕</button></div>
+    <p style="opacity:.7;margin:0">Speichere die aktuellen Tabs und Gruppen als Set (z. B. „Uni“, „Server“, „Privat“) und wechsle jederzeit dorthin.</p>
+    ${S.x.workspaces.map(w=>`<div class="row"><span style="flex:1"><b>${esc(w.name)}</b>${w.name===act?' <small style="color:var(--ac)">aktiv</small>':''}<br><small style="opacity:.6">${w.tabs} Tabs</small></span><button class="btn" data-wo="${esc(w.name)}">Öffnen</button><button class="btn" data-wd="${esc(w.name)}">✕</button></div>`).join('')||'<p style="opacity:.6">Noch keine Arbeitsbereiche.</p>'}
+    <div class="row"><input id="wn" type="text" placeholder="Name, z. B. Uni" style="flex:1;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:8px 12px;color:inherit;outline:0"><button class="btn on" id="ws">Aktuelle Tabs speichern</button></div></div></div>`;
+    $.querySelectorAll('[data-wo]').forEach(e=>e.onclick=()=>send({t:'ws_open',name:e.dataset.wo}));
+    $.querySelectorAll('[data-wd]').forEach(e=>e.onclick=()=>send({t:'ws_delete',name:e.dataset.wd}));
+    ws.onclick=()=>{ if(wn.value.trim()) send({t:'ws_save',name:wn.value}); }; c.onclick=()=>send({t:'close_overlay'});
+  }
+  if(R==='privacy'){
+    const P=S.x.privacy||{week:[],top:[],page:[],total:0}, mx=Math.max(1,...P.week.map(w=>w.n));
+    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Datenschutz-Bericht</h1><button class="btn" id="c">✕</button></div>
+    <div style="font-size:34px;font-weight:300">${P.total.toLocaleString()} <small style="font-size:14px;opacity:.7">geblockt in den letzten 7 Tagen</small></div>
+    <div class="row" style="align-items:flex-end;height:90px;gap:6px">${P.week.map(w=>`<div style="flex:1;text-align:center"><div title="${w.n}" style="height:${Math.round(w.n/mx*64)+2}px;background:linear-gradient(180deg,#5ad1ff,#7b6bff);border-radius:6px 6px 2px 2px"></div><small style="opacity:.6">${new Date(w.day*864e5).toLocaleDateString([],{weekday:'short'})}</small></div>`).join('')}</div>
+    <h3 style="margin:6px 0 0">Auf dieser Seite geblockt</h3>${P.page.map(x=>`<div class="row"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(x.d)}</span><b>${x.n}</b></div>`).join('')||'<p style="opacity:.6;margin:0">Nichts geblockt (oder noch nichts geladen).</p>'}
+    <h3 style="margin:6px 0 0">Häufigste Tracker</h3>${P.top.map(x=>`<div class="row"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(x.d)}</span><b>${x.n}</b></div>`).join('')||'<p style="opacity:.6;margin:0">Noch keine Daten.</p>'}
+    ${P.on?'':'<small style="opacity:.6">Die Statistik ist in den Einstellungen ausgeschaltet.</small>'}</div></div>`;
+    c.onclick=()=>send({t:'close_overlay'});
+  }
+  if(R==='qr'){
+    const q=S.x.qr||{svg:'',url:''};
+    $.innerHTML=`<div class="ov"><div class="card glass" style="align-items:center;text-align:center"><div class="row" style="width:100%"><h1 style="flex:1;text-align:left">Seite ans Handy</h1><button class="btn" id="c">✕</button></div>
+    <div style="background:#fff;border-radius:14px;padding:6px;width:260px;height:260px">${q.svg}</div><small style="opacity:.7;word-break:break-all">${esc(q.url)}</small>
+    <p style="opacity:.7;margin:0">Kamera-App öffnen und den Code scannen. Oder den Link in deinen Sync-Ordner legen (als Klartext-Liste).</p>
+    <button class="btn" id="qs">In Sync-Ordner ablegen</button></div></div>`;
+    qs.onclick=()=>send({t:'qr_save'}); c.onclick=()=>send({t:'close_overlay'});
+  }
+  if(R==='import'){
+    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Import</h1><button class="btn" id="c">✕</button></div><p style="opacity:.7;margin:0">Lesezeichen und Verlauf aus anderen Browsern übernehmen.</p>${importSection()}</div></div>`;
+    c.onclick=()=>send({t:'close_overlay'}); bindImport();
+  }
+  if(R==='suggest'){
+    $.innerHTML='<div style="padding:4px">'+(S.x.suggest||[]).map(x=>`<div class="tab" data-u="${esc(x.u)}"><span class="t" style="display:block"><b>${x.k} ${esc(x.t||x.u)}</b><br><small style="opacity:.6">${esc(x.u)}</small></span></div>`).join('')+'</div>';
+    $.querySelectorAll('[data-u]').forEach(e=>e.onclick=()=>{send({t:'suggest_close'});send({t:'open_url',url:e.dataset.u});});
+  }
+  if(R==='tools'){
+    $.innerHTML=`<div style="padding:12px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;background:#101830"><div class="row"><h3 style="flex:1;margin:0">Werkzeuge</h3><button class="btn ic" id="tx">✕</button></div><b>Notizen</b><textarea id="nt" style="flex:1;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:10px;color:inherit;outline:0;resize:none">${esc(S.x.notes||'')}</textarea><b>Rechner</b><input id="ci" type="text" placeholder="z. B. 12*(3+4)" style="background:var(--g);border:1px solid var(--l);border-radius:10px;padding:8px 12px;color:inherit;outline:0"><div id="co" style="font-size:22px"></div></div>`;
+    nt.oninput=()=>send({t:'notes_save',v:nt.value});
+    ci.oninput=()=>{ try{ const v=ci.value.trim(); if(v&&/^[0-9+\-*\/().,%\s^]*$/.test(v)){ co.textContent='= '+Function('"use strict";return ('+v.replace(/,/g,'.').replace(/\^/g,'**')+')')(); } else co.textContent=''; }catch(e){co.textContent='';} };
+    tx.onclick=()=>send({t:'close_overlay'});
+  }
+  if(R==='leak'){
+    const L=S.x.leak||{};
+    if(!window.__rtc){ window.__rtc=1; window.rtcText='WebRTC: Test läuft…'; (async()=>{ try{ const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]}); pc.createDataChannel('x'); const ips=new Set();
+      pc.onicecandidate=e=>{ if(e.candidate){ const m=/(\d+\.\d+\.\d+\.\d+)/.exec(e.candidate.candidate); if(m) ips.add(m[1]); } };
+      await pc.setLocalDescription(await pc.createOffer());
+      setTimeout(()=>{ window.rtcText='WebRTC: '+(ips.size?('sichtbare IPs: '+[...ips].join(', ')):'keine IP sichtbar (geschützt)'); const e=document.getElementById('rtc'); if(e)e.textContent=window.rtcText; pc.close(); },2500);
+    }catch(e){ window.rtcText='WebRTC: nicht verfügbar'; } })(); }
+    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Leak-Test</h1><button class="btn" id="c">✕</button></div>
+    <p style="opacity:.7;margin:0">Fragt api.ipify.org ab – einmal direkt, einmal über den Browser-Weg.</p>
+    <button class="btn on" id="lr">${L.busy?'Teste…':'Test starten'}</button>
+    ${L.verdict?`<h3 style="margin:0">${esc(L.verdict)}</h3><div>Echte IP: <b>${esc(L.direct||'?')}</b></div><div>Browser-IP: <b>${esc(L.browser||'?')}</b></div><div>VPN: ${L.vpn?'an':'aus'} (${esc(L.tor)}) · DNS: ${esc(L.dns)}</div>`:''}
+    <div id="rtc" style="opacity:.8">${window.rtcText||''}</div></div></div>`;
+    lr.onclick=()=>send({t:'leak_run'}); c.onclick=()=>send({t:'close_overlay'});
+  }
+  if(R==='profiles'){
+    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Profile</h1><button class="btn" id="c">✕</button></div><p style="opacity:.7;margin:0">Aktuell: <b>${esc(S.x.profile)}</b>. Jedes Profil hat eigene Cookies, Verlauf, Lesezeichen, Tresor und Einstellungen und öffnet in einem eigenen Fenster.</p>
+    ${S.x.profiles.map(p=>`<div class="row"><span style="flex:1">${esc(p)}</span><button class="btn" data-po="${esc(p)}">Öffnen</button></div>`).join('')}
+    <div class="row"><input id="pn" type="text" placeholder="Neues Profil (z. B. arbeit)" style="flex:1;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:8px 12px;color:inherit;outline:0"><button class="btn on" id="pc">Erstellen</button></div></div></div>`;
+    $.querySelectorAll('[data-po]').forEach(e=>e.onclick=()=>send({t:'profile_open',name:e.dataset.po}));
+    pc.onclick=()=>{ if(pn.value.trim()) send({t:'profile_open',name:pn.value.trim()}); }; c.onclick=()=>send({t:'close_overlay'});
+  }
+  if(R==='vault'){
+    const v=S.vault, fld='background:var(--g);border:1px solid var(--l);border-radius:10px;padding:8px 12px;outline:0;color:inherit';
+    if(!v.unlocked){
+      $.innerHTML=`<div class="ov"><div class="card glass"><h1>Passwort-Tresor</h1><p style="opacity:.7;margin:0">${v.exists?'Master-Passwort eingeben.':'Neuen Tresor erstellen: starkes Master-Passwort wählen (min. 8 Zeichen). Es kann nicht wiederhergestellt werden.'}</p><input id="mp" type="password" style="${fld}"><div style="color:#fb7185">${esc(v.error||'')}</div><div class="row" style="justify-content:flex-end"><button class="btn" id="vx">Abbrechen</button><button class="btn on" id="vu">${v.exists?'Entsperren':'Erstellen'}</button></div></div></div>`;
+      mp.focus(); const go=()=>send({t:'vault_unlock',p:mp.value}); vu.onclick=go; mp.onkeydown=e=>{if(e.key==='Enter')go()}; vx.onclick=()=>send({t:'close_overlay'});
+    } else {
+      $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">Tresor</h1><button class="btn" id="vl">Sperren</button><button class="btn" id="vc">✕</button></div>
+      ${v.entries.map(e=>`<div class="row"><span style="flex:1"><b>${esc(e.host)}</b><br><small style="opacity:.6">${esc(e.user)}</small></span>${e.pwned?`<span class="pill" style="background:#8a2a2a" title="In Datenlecks gefunden">⚠ ${e.pwned}×</span>`:''}${e.dup?'<span class="pill" style="background:#8a6d1a">doppelt</span>':''}${e.weak?'<span class="pill" style="background:#8a6d1a">schwach</span>':''}${e.code?`<span class="pill" data-cp="${e.code}" style="cursor:pointer" title="Klicken zum Kopieren">🔑 ${e.code} <small data-rem="${e.rem}">${e.rem}s</small></span>`:''}<button class="btn" data-vf="${e.id}">Ausfüllen</button><button class="btn" data-vd="${e.id}">✕</button></div>`).join('')||'<p style="opacity:.6">Noch keine Logins. Auf einer Login-Seite Strg+K → „Login speichern“.</p>'}
+      <h3 style="margin:6px 0 0">Login hinzufügen</h3><input id="vh" type="text" placeholder="Seite (z. B. github.com)" style="${fld}"><input id="vn" type="text" placeholder="Benutzername" style="${fld}"><input id="vp" type="text" placeholder="Passwort" style="${fld}"><input id="vtt" type="text" placeholder="2FA-Secret oder otpauth://-Link (optional)" style="${fld}">
+      <div class="row"><button class="btn" id="vg">Passwort generieren</button>${S.settings.hibp_enabled?'<button class="btn" id="vchk">Passwörter prüfen</button>':''}<button class="btn on" id="va">Speichern</button></div></div></div>`;
+      const gen=()=>{const c='abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*-_',a=new Uint32Array(20);crypto.getRandomValues(a);return [...a].map(x=>c[x%c.length]).join('');};
+      vg.onclick=()=>{vp.value=gen()}; va.onclick=()=>{if(vh.value&&vp.value){send({t:'vault_add',host:vh.value,user:vn.value,pass:vp.value,totp:vtt.value});}};
+      vl.onclick=()=>send({t:'vault_lock'}); if(window.vchk) vchk.onclick=()=>send({t:'hibp_run'}); $.querySelectorAll('[data-cp]').forEach(e=>e.onclick=()=>copyText(e.dataset.cp)); vc.onclick=()=>send({t:'close_overlay'});
+      $.querySelectorAll('[data-vf]').forEach(e=>e.onclick=()=>send({t:'pw_fill_id',id:e.dataset.vf}));
+      $.querySelectorAll('[data-vd]').forEach(e=>e.onclick=()=>send({t:'vault_del',id:e.dataset.vd}));
+    }
+  }
+  if(R==='find'){
+    $.innerHTML=`<div style="padding:8px"><div class="glass row" style="padding:0 10px;height:46px;background:#121a30"><input id="fq" type="text" placeholder="Auf Seite suchen…" style="flex:1;background:none;border:0;outline:0"><button class="btn ic" id="fp">↑</button><button class="btn ic" id="fnx">↓</button><button class="btn ic" id="fx">✕</button></div></div>`;
+    fq.focus(); fq.oninput=()=>send({t:'find',q:fq.value,back:false});
+    fq.onkeydown=e=>{if(e.key==='Enter')send({t:'find',q:fq.value,back:e.shiftKey})};
+    fp.onclick=()=>send({t:'find',q:fq.value,back:true}); fnx.onclick=()=>send({t:'find',q:fq.value,back:false}); fx.onclick=()=>send({t:'close_overlay'});
+  }
+  if(['history','bookmarks','downloads'].includes(R)){
+    const T={history:'Verlauf',bookmarks:'Lesezeichen',downloads:'Downloads'}[R];
+    const rows=R==='history'?S.history.map(h=>({a:h.title||h.url,b:h.url,u:h.url})):R==='bookmarks'?S.bookmarks.map(b=>({a:b.title||b.url,b:b.url,u:b.url,x:1})):S.downloads.slice().reverse().map(d=>({a:d.name,b:(d.done?(d.ok?'fertig':'fehlgeschlagen'):'läuft…')+(d.vt?' · '+d.vt:''),p:d.path}));
+    $.innerHTML=`<div class="ov"><div class="card glass"><div class="row"><h1 style="flex:1">${T}</h1>${R==='history'?'<button class="btn" id="hc">Verlauf löschen</button>':''}<button class="btn" id="c">✕</button></div><input id="lq" type="text" placeholder="Suchen…" style="background:var(--g);border:1px solid var(--l);border-radius:10px;padding:8px 12px;outline:0"><div id="ll"></div></div></div>`;
+    const draw=()=>{const f=lq.value.toLowerCase(); ll.innerHTML=rows.filter(r=>(r.a+r.b).toLowerCase().includes(f)).slice(0,200).map((r,i)=>`<div class="tab" data-r="${rows.indexOf(r)}"><span class="t" style="display:block"><b>${esc(r.a)}</b><br><small style="opacity:.6">${esc(r.b)}</small></span>${r.x?'<span class="x" data-x="1" style="display:inline">✕</span>':''}</div>`).join('')||'<p style="opacity:.6">Nichts vorhanden.</p>'};
+    lq.oninput=draw; draw();
+    ll.onclick=e=>{const d=e.target.closest('[data-r]'); if(!d)return; const r=rows[+d.dataset.r];
+      if(e.target.dataset.x){send({t:'bm_remove',url:r.u});return;}
+      if(R==='downloads'){send({t:'dl_show',path:r.p});return;}
+      send({t:'close_overlay'}); send({t:'open_url',url:r.u});};
+    c.onclick=()=>send({t:'close_overlay'}); if(window.hc) hc.onclick=()=>send({t:'hist_clear'});
+  }
+  if(R==='settings'){
+    const C=['de','at','ch','nl','fr','se','us','gb'], sw=(k,l)=>`<label class="sw">${l}<input type="checkbox" ${s[k]?'checked':''} data-k="${k}"></label>`;
+    $.innerHTML=`<div class="ov"><div class="card glass"><h1>Einstellungen</h1>
+    <label class="sw">Suchmaschine<select data-s="search_engine">${['duckduckgo','google','brave'].map(e=>`<option ${s.search_engine===e?'selected':''}>${e}</option>`).join('')}</select></label>
+    ${sw('tabs_wide','Tabs mit Namen')}${sw('tabs_on_top','Tab-Leiste oben')}${sw('suspend_background_tabs','Hintergrund-Tabs pausieren')}
+    <label class="sw">Lautstärke<input type="range" min="0" max="1" step=".05" value="${s.volume}" data-r="volume"></label>
+    ${sw('vpn_enabled','Tor-VPN')}${sw('kill_switch','Kill-Switch')}
+    <label class="sw">Exit-Land<select data-s="vpn_exit_country">${C.map(c=>`<option ${s.vpn_exit_country===c?'selected':''}>${c}</option>`).join('')}</select></label>
+    <h3 style="margin:6px 0 0">Erweiterungen (Chrome-Adapter)</h3>
+    <div class="row"><input id="exi" type="text" placeholder="Web-Store-Link oder Erweiterungs-ID" style="flex:1;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"><button class="btn" id="exb">Installieren</button></div>
+    <div class="row"><button class="btn" id="exf">.crx / .zip…</button><button class="btn" id="exd">Ordner…</button></div>
+    ${(S.exts||[]).map(x=>`<div class="row"><input type="checkbox" ${x.on?'checked':''} data-et="${x.id}"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.name)}</span><button class="btn" data-er="${x.id}">✕</button></div>`).join('')}
+    <h3 style="margin:6px 0 0">Sync (Ordner, Ende-zu-Ende verschlüsselt)</h3>
+    <div class="row"><button class="btn" id="sp">Sync-Ordner wählen…</button><button class="btn" data-a="sync_now">Jetzt synchronisieren</button></div>
+    <small style="opacity:.6">${esc(s.sync_folder||'Kein Ordner gewählt')} · braucht entsperrten Tresor</small>
+    <h3 style="margin:6px 0 0">Updates</h3>
+    <label class="sw">GitHub-Repo (owner/name)<input type="text" value="${esc(s.update_repo)}" data-s="update_repo" style="width:200px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
+    <button class="btn" id="uc">Nach Updates suchen</button>
+    ${sw('block_third_party_cookies','Drittanbieter-Cookies blockieren (experimentell, Neustart nötig)')}
+    <h3 style="margin:6px 0 0">Arbeit &amp; Import</h3>
+    <div class="row"><button class="btn" data-a="workspaces">Arbeitsbereiche</button><button class="btn" data-a="import">Import aus anderem Browser</button><button class="btn" data-a="gaming_toggle">Gaming-Modus</button></div>
+    <h3 style="margin:6px 0 0">Navigation &amp; Medien</h3>
+    ${sw('hints_enabled','Tasten-Navigation (Hinweise für Links)')}
+    <label class="sw">Hinweis-Taste (Umschalt = neuer Tab)<input type="text" maxlength="1" value="${esc(s.hint_key)}" data-s="hint_key" style="width:50px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
+    <label class="sw">Hinweis-Buchstaben<input type="text" value="${esc(s.hint_chars)}" data-s="hint_chars" style="width:160px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
+    <small style="opacity:.6">Video: Bild-im-Bild und Tempo über die Tastenkürzel unten einstellbar.</small>
+    <h3 style="margin:6px 0 0">Vorlesen</h3>
+    <label class="sw">Windows-Stimme (leer = Standard)<input type="text" value="${esc(s.tts_voice)}" data-s="tts_voice" style="width:200px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
+    <label class="sw">Tempo (−10 … 10)<input type="range" min="-10" max="10" step="1" value="${s.tts_rate}" data-r="tts_rate"></label>
+    <label class="sw">Eigenes TTS-Kommando (liest den Text von stdin)<input type="text" value="${esc(s.tts_cmd)}" data-s="tts_cmd" style="width:200px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
+    <button class="btn" id="ttsv">Verfügbare Stimmen anzeigen</button>
+    <h3 style="margin:6px 0 0">Datenschutz-Bericht &amp; Sicherheit</h3>
+    ${sw('stats_enabled','Statistik über geblockte Anfragen speichern')}<button class="btn" data-a="privacy">Bericht öffnen</button>
+    ${sw('https_interstitial','Warnseite bei Seiten ohne HTTPS')}${sw('hibp_enabled','Passwort-Check (Have I Been Pwned) erlauben')}${sw('vt_enabled','Downloads mit VirusTotal prüfen')}
+    <label class="sw">VirusTotal-API-Schlüssel<input type="text" value="${esc(s.vt_key)}" data-s="vt_key" style="width:200px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
+    <small style="opacity:.6">Es wird nur der Datei-Hash gesendet, nicht die Datei. Der Schlüssel liegt lokal in deinem Profil.</small>
+    <h3 style="margin:6px 0 0">Browser</h3>
+    ${sw('restore_session','Sitzung beim Start wiederherstellen')}${sw('block_popups','Popups blockieren')}${sw('block_autoplay','Autoplay blockieren (Neustart nötig)')}${sw('cookie_banners','Cookie-Banner automatisch ablehnen/ausblenden')}${sw('mouse_gestures','Mausgesten (rechte Taste ziehen: ← zurück, → vor, ↓ neuer Tab, ↑ neu laden)')}
+    <h3 style="margin:6px 0 0">Tor</h3>
+    ${sw('tor_per_tab','Eigener Tor-Kreis pro Tab')}
+    <label class="sw" style="align-items:flex-start">Bridges<textarea data-s="bridges" rows="3" placeholder="Eine Bridge pro Zeile, z. B. obfs4 … oder snowflake … (von bridges.torproject.org)" style="width:260px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit">${esc(s.bridges||'')}</textarea></label>
+    <small style="opacity:.6">Bridges und .onion: VPN einmal aus- und einschalten, damit Tor neu startet.</small>
+    <h3 style="margin:6px 0 0">Aussehen</h3>
+    ${sel('theme',[['liquid','Liquid'],['ocean','Ocean'],['aurora','Aurora'],['sunset','Sunset'],['graphite','Graphite']],s.theme)}
+    <div class="row"><button class="btn" id="bgp">Startseiten-Hintergrund…</button><button class="btn" id="bgc">Entfernen</button></div>
+    <label class="sw">Wetter-Stadt (Startseite, optional)<input type="text" value="${esc(s.weather_city||'')}" data-s="weather_city" style="width:160px;background:var(--g);border:1px solid var(--l);border-radius:10px;padding:6px 10px;outline:0;color:inherit"></label>
+    <div class="row">${['#5ad1ff','#7b6bff','#4ade80','#fb7185','#fbbf24'].map(c=>`<span data-ac="${c}" style="width:26px;height:26px;border-radius:50%;background:${c};cursor:pointer;border:2px solid ${s.accent===c?'#fff':'transparent'}"></span>`).join('')}</div>
+    <h3 style="margin:6px 0 0">Tastenkürzel</h3>
+    ${S.actions.map(a=>`<div class="row"><span style="flex:1">${esc(a.label)}</span><button class="btn" data-ka="${a.id}">${capturing===a.id?'Taste drücken…':esc(a.combo||'—')}</button></div>`).join('')}
+    <button class="btn" id="kr">Tastenkürzel zurücksetzen</button>
+    <h3 style="margin:6px 0 0">Daten</h3>
+    ${sw('clear_on_exit','Beim Beenden alles löschen (Verlauf, Cookies, Cache)')}
+    <button class="btn" id="cd">Jetzt Browserdaten löschen</button>
+    <h3 style="margin:6px 0 0">Schutz (Standard für alle Seiten)</h3>
+    ${sw('ad_block','Werbeblocker')}${sw('fingerprint_protect','Anti-Fingerprinting')}${sw('webrtc_protect','WebRTC-Leak-Schutz')}${sw('https_only','Nur HTTPS')}${sw('strip_tracking','Tracking-Parameter entfernen')}
+    <p style="margin:0;opacity:.6;font-size:12px">Pro Seite änderbar über das 🛡 in der Leiste oder Strg+K.</p>
+    <h3 style="margin:6px 0 0">DNS</h3>
+    <label class="sw">DNS-Server${sel('dns_mode',[['system','System'],['quad9','Quad9 (DoH)'],['cloudflare','Cloudflare (DoH)'],['google','Google (DoH)'],['custom','Eigene IP']],s.dns_mode)}</label>
+    <label class="sw">Eigene DNS-IP<input type="text" value="${esc(s.dns_custom)}" data-s="dns_custom" style="background:var(--g);border:1px solid var(--l);border-radius:10px;padding:4px 8px;width:150px"></label>
+    <h3 style="margin:6px 0 0">Werbeblocker</h3>${blSection()}
+    <label class="sw">Listen aktualisieren${sel('bl_update',[['startup','Beim Browserstart'],['on_open','Beim Öffnen einer Seite'],['interval','In Intervallen'],['monthly','Monatlich'],['manual','Nur manuell']],s.bl_update)}</label>
+    <label class="sw">Intervall (Stunden)<input type="number" min="1" value="${s.bl_interval_hours}" data-r="bl_interval_hours" style="background:var(--g);border:1px solid var(--l);border-radius:10px;padding:4px 8px;width:80px"></label>
+    <button class="btn on" id="c">Schließen</button></div></div>`;
+    $.querySelectorAll('input[type=checkbox]').forEach(e=>e.onchange=()=>set(e.dataset.k,e.checked));
+    $.querySelectorAll('[data-s]').forEach(e=>e.onchange=()=>set(e.dataset.s,e.value));
+    $.querySelectorAll('[data-r]').forEach(e=>e.onchange=()=>set(e.dataset.r,+e.value));
+    c.onclick=()=>send({t:'close_overlay'}); bindBl();
+    $.querySelectorAll('[data-ac]').forEach(e=>e.onclick=()=>set('accent',e.dataset.ac));
+    $.querySelectorAll('[data-ka]').forEach(e=>e.onclick=()=>{capturing=e.dataset.ka; view();});
+    kr.onclick=()=>send({t:'keymap_reset'});
+    exb.onclick=()=>{send({t:'ext_install',v:exi.value}); exi.value='';}; exf.onclick=()=>send({t:'ext_pick'}); exd.onclick=()=>send({t:'ext_pick_dir'});
+    $.querySelectorAll('[data-et]').forEach(e=>e.onchange=()=>send({t:'ext_toggle',id:e.dataset.et}));
+    $.querySelectorAll('[data-er]').forEach(e=>e.onclick=()=>send({t:'ext_remove',id:e.dataset.er}));
+    bgp.onclick=()=>send({t:'bg_pick'}); bgc.onclick=()=>send({t:'bg_clear'});
+    ttsv.onclick=()=>send({t:'tts_voices'});
+    sp.onclick=()=>send({t:'sync_pick'}); uc.onclick=()=>send({t:'update_check'});
+    $.querySelectorAll('[data-a]').forEach(e=>e.onclick=()=>send({t:'action',id:e.dataset.a})); cd.onclick=()=>send({t:'action',id:'clear_data'});
+  }
+}
+document.addEventListener('keydown',e=>{
+  if(['Control','Shift','Alt','Meta'].includes(e.key)) return;
+  if(capturing){ e.preventDefault(); if(e.key!=='Escape') send({t:'keymap',a:capturing,c:combo(e)}); capturing=null; view(); return; }
+  const c=combo(e);
+  if(S&&S.actions&&S.actions.some(a=>a.combo===c)&&!(R==='palette'&&c==='Ctrl+K')){ e.preventDefault(); send({t:'key',c}); }
+  else if(e.key==='Escape'&&['palette','shield','settings','find','history','bookmarks','downloads','vault','tools','leak','profiles','suggest','workspaces','privacy','qr','import'].includes(R)) send({t:'close_overlay'});
+});
+send({t:'ready'});
+</script>

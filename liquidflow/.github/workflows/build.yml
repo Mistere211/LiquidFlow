@@ -1,0 +1,94 @@
+name: Build Liquid Flow
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            .
+            setup
+
+      # Release-Tag (z. B. v0.5.0) wird zur Programmversion
+      - name: Version aus Tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}".TrimStart('v')
+          (Get-Content Cargo.toml -Raw) -replace '(?m)^version = ".*"', "version = `"$ver`"" | Set-Content Cargo.toml -NoNewline
+
+      # Zuerst mit Tab-Vorschau (Feature "previews"). Klappt das nicht, wird ohne gebaut.
+      - name: Browser bauen
+        shell: pwsh
+        run: |
+          cargo build --release --features previews
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "::warning::Build mit Tab-Vorschau fehlgeschlagen (Log oben ansehen) - baue ohne Vorschau"
+            cargo build --release
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+          }
+
+      # obfs4/meek (lyrebird) und Snowflake aus dem offiziellen Tor Expert Bundle (optional)
+      - name: Pluggable Transports holen
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $v = (Invoke-RestMethod https://aus1.torproject.org/torbrowser/update_3/release/downloads.json).version
+          $base = "https://archive.torproject.org/tor-package-archive/torbrowser/$v"
+          $file = "tor-expert-bundle-windows-x86_64-$v.tar.gz"
+          Invoke-WebRequest "$base/$file" -OutFile teb.tar.gz
+          $sums = (Invoke-WebRequest "$base/sha256sums-signed-build.txt").Content
+          $want = (($sums -split "`n") | Where-Object { $_ -match [regex]::Escape($file) } | Select-Object -First 1).Trim().Split(" ")[0].ToLower()
+          $got = (Get-FileHash teb.tar.gz -Algorithm SHA256).Hash.ToLower()
+          if ($want -ne $got) { throw "Pruefsumme stimmt nicht ($want / $got)" }
+          mkdir teb | Out-Null
+          tar -xzf teb.tar.gz -C teb
+          mkdir pt | Out-Null
+          Copy-Item teb/tor/pluggable_transports/lyrebird.exe pt/
+          Copy-Item teb/tor/pluggable_transports/snowflake-client.exe pt/
+
+      # Kleiner Online-Installer (wie bei Chrome/Brave) + Hintergrund-Updater: eine Datei, LiquidFlowSetup.exe
+      - name: Setup-Programm bauen
+        env:
+          LIQUIDFLOW_REPO: ${{ github.repository }}
+        run: cargo build --release --manifest-path setup/Cargo.toml
+
+      - name: Programmpaket und Dateien sammeln
+        shell: pwsh
+        run: |
+          mkdir dist -Force | Out-Null
+          mkdir payload | Out-Null
+          Copy-Item target/release/liquidflow.exe payload/
+          if (Test-Path pt) { Copy-Item pt payload/pt -Recurse }
+          7z a -tzip dist/liquidflow-app-windows-x86_64.zip ./payload/*
+          (Get-FileHash dist/liquidflow-app-windows-x86_64.zip -Algorithm SHA256).Hash.ToLower() | Out-File -Encoding ascii -NoNewline dist/liquidflow-app-windows-x86_64.zip.sha256
+          Copy-Item setup/target/release/liquidflow-setup.exe dist/LiquidFlowSetup.exe
+
+      # Offline-Installer (alles in einer Datei, ohne Internet) – weiterhin als Ausweichlösung
+      - run: choco install innosetup -y --no-progress
+      - run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\liquidflow.iss'
+      - name: Pruefsumme Offline-Installer
+        run: (Get-FileHash dist\LiquidFlow-Offline-Setup.exe -Algorithm SHA256).Hash.ToLower() | Out-File -Encoding ascii -NoNewline dist\LiquidFlow-Offline-Setup.exe.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LiquidFlow
+          path: dist/*
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: |
+            dist/LiquidFlowSetup.exe
+            dist/liquidflow-app-windows-x86_64.zip
+            dist/liquidflow-app-windows-x86_64.zip.sha256
+            dist/LiquidFlow-Offline-Setup.exe
+            dist/LiquidFlow-Offline-Setup.exe.sha256

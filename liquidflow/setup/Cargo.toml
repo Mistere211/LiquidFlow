@@ -1,0 +1,25 @@
+[package]
+name = "liquidflow-setup"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+tao = "0.30"
+wry = "0.46"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "5"
+ureq = { version = "2", features = ["json"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+sha2 = "0.10"
+rfd = "0.15"
+
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
